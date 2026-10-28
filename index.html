@@ -1,5 +1,11 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>絵札工房</title>
+<meta name="description" content="キャラクターのイラストから、トレーディングカード風の画像をつくるツール。ブラウザだけで動きます。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3ClinearGradient id='f' x1='0' y1='1' x2='1' y2='0'%3E%3Cstop offset='0' stop-color='%238FE9E2'/%3E%3Cstop offset='.27' stop-color='%239DBBFF'/%3E%3Cstop offset='.52' stop-color='%23DCA6F2'/%3E%3Cstop offset='.76' stop-color='%23FFCE96'/%3E%3C/linearGradient%3E%3Crect x='6.5' y='1.5' width='19' height='29' rx='3' fill='url(%23f)' stroke='%23191B21' stroke-opacity='.3'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+1+Code:wght@400;500;700&family=Shippori+Mincho:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap">
@@ -58,6 +64,7 @@
 }
 
 *{box-sizing:border-box}
+[hidden]:not([hidden=until-found i]){display:none!important}
 html,body{height:100%}
 body{
   margin:0;
@@ -115,7 +122,8 @@ button,input,select,textarea{font:inherit;color:inherit}
   width:min(100%,calc((100dvh - 348px) * 0.7143), 450px);
   aspect-ratio:750/1050;
 }
-@media (max-width:900px){.plate{width:min(100%,340px)}}
+/* the crop marks sit 28px outside the plate, 4px past the stage padding */
+@media (max-width:900px){.plate{width:min(calc(100% - 10px),340px)}}
 .plate::before{
   content:"";position:absolute;inset:-19px;
   border:1px dashed var(--line2);opacity:.55;border-radius:4px;pointer-events:none;
@@ -450,6 +458,8 @@ hr.rule{border:0;border-top:1px solid var(--line);margin:3px 0}
 .extract{display:flex;flex-direction:column;gap:8px}
 .extract[hidden]{display:none}
 </style>
+</head>
+<body>
 
 <div class="app">
   <header class="topbar">
@@ -1902,40 +1912,15 @@ if(document.fonts && document.fonts.load){
     .then(function(){ draw(); renderDeck(); });
 }
 
-/* ── downloads capability ─────────────────────────────── */
-var dlCap = null, dlResolved = false;
-var dlPromise = (function(){
-  try{
-    if(window.claude && typeof window.claude.use === 'function'){
-      return window.claude.use('downloads').then(
-        function(d){ dlCap=d; dlResolved=true; return d; },
-        function(){ dlResolved=true; return null; });
-    }
-  }catch(e){}
-  dlResolved = true;
-  return Promise.resolve(null);
-})();
-
-var DL_MSG = {
-  declined:'保存はキャンセルされました', rate_limited:'少し待ってからもう一度お試しください',
-  too_large:'ファイルが大きすぎます。倍率か画像設定を下げてください', bad_request:'保存できない形式でした',
-  rejected_extension:'この形式は保存できません', extension_not_enabled:'この形式は保存できません'
-};
+/* ── download ─────────────────────────────────────────── */
 function saveBlob(blob, filename, quiet){
-  return dlPromise.then(function(d){
-    if(d){
-      return d.save({ filename:filename, data:blob }).then(
-        function(){ if(!quiet) toast('保存しました'); return true; },
-        function(err){ toast(DL_MSG[err && err.code] || '保存できませんでした'); return false; });
-    }
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url; a.download = filename;
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
-    if(!quiet) toast('保存しました');
-    return true;
-  });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+  if(!quiet) toast('保存しました');
+  return Promise.resolve(true);
 }
 
 /* ── export ───────────────────────────────────────────── */
@@ -1998,7 +1983,7 @@ function loadJSZip(){
   if(window.JSZip) return Promise.resolve(window.JSZip);
   return new Promise(function(res){
     var s=document.createElement('script');
-    s.src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+    s.src='vendor/jszip.min.js';
     s.onload=function(){ res(window.JSZip||null); };
     s.onerror=function(){ res(null); };
     document.head.appendChild(s);
@@ -2011,25 +1996,20 @@ btnBatch.addEventListener('click', function(){
   btnBatch.disabled = true;
   toast(cards.length + '枚を書き出しています…');
   Promise.all(cards.map(function(c){ return renderToBlob(c, scale); })).then(function(blobs){
-    return dlPromise.then(function(d){
-      if(!d){
-        /* offline-friendly path: one zip */
-        return loadJSZip().then(function(JSZip){
-          if(!JSZip) return sequential(blobs, cards);
-          var zip = new JSZip(), used = {};
-          blobs.forEach(function(b,i){
-            if(!b) return;
-            var n = cardFilename(cards[i], i);
-            while(used[n]) n = n.replace(/(\.png)$/, '_'+(i+1)+'$1');
-            used[n] = 1;
-            zip.file(n, b);
-          });
-          return zip.generateAsync({type:'blob'}).then(function(z){
-            return saveBlob(z, projSlug() + '.zip');
-          });
-        });
-      }
-      return sequential(blobs, cards);
+    /* one zip; if JSZip won't load, one file at a time */
+    return loadJSZip().then(function(JSZip){
+      if(!JSZip) return sequential(blobs, cards);
+      var zip = new JSZip(), used = {};
+      blobs.forEach(function(b,i){
+        if(!b) return;
+        var n = cardFilename(cards[i], i);
+        while(used[n]) n = n.replace(/(\.png)$/, '_'+(i+1)+'$1');
+        used[n] = 1;
+        zip.file(n, b);
+      });
+      return zip.generateAsync({type:'blob'}).then(function(z){
+        return saveBlob(z, projSlug() + '.zip');
+      });
     });
   }).then(function(){ btnBatch.disabled = false; })
     .catch(function(){ btnBatch.disabled = false; toast('書き出しに失敗しました'); });
@@ -2946,10 +2926,6 @@ document.getElementById('btnProjSave').addEventListener('click', function(){
     };
     var text = JSON.stringify(out);
     var blob = new Blob([text], {type:'application/json'});
-    if(blob.size > 15.5*1024*1024 && dlCap){
-      toast('ファイルが大きすぎます。画像設定を「圧縮」か「含めない」にしてください');
-      return;
-    }
     saveBlob(blob, projFilename());
   });
 });
