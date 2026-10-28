@@ -1,0 +1,3091 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>絵札工房</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+1+Code:wght@400;500;700&family=Shippori+Mincho:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap">
+<style>
+/* ── tokens ───────────────────────────────────────────── */
+:root{
+  --ground:#E7E8EC;
+  --surface:#FDFDFE;
+  --surface2:#F1F2F6;
+  --sunken:#DFE1E7;
+  --line:#D2D5DD;
+  --line2:#B7BCC8;
+  --ink:#191B21;
+  --ink2:#5C616F;
+  --ink3:#8A8F9D;
+  --focus:#2F7FA8;
+  --danger:#A4443C;
+  --foil:linear-gradient(100deg,#8FE9E2 0%,#9DBBFF 27%,#DCA6F2 52%,#FFCE96 76%,#8FE9E2 100%);
+  --shadow-1:0 1px 2px rgba(20,22,30,.07);
+  --shadow-2:0 2px 4px rgba(20,22,30,.06),0 14px 34px rgba(20,22,30,.10);
+  --r:9px;
+  --ui:"Zen Kaku Gothic New",-apple-system,"Hiragino Kaku Gothic ProN","Yu Gothic UI",Meiryo,sans-serif;
+  --mono:"M PLUS 1 Code",ui-monospace,"SFMono-Regular",Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#131418;
+    --surface:#1C1D23;
+    --surface2:#23252C;
+    --sunken:#101116;
+    --line:#30333B;
+    --line2:#454955;
+    --ink:#ECEDF1;
+    --ink2:#9BA1AD;
+    --ink3:#6C7280;
+    --focus:#74B8DD;
+    --danger:#D98078;
+    --shadow-1:0 1px 2px rgba(0,0,0,.45);
+    --shadow-2:0 2px 6px rgba(0,0,0,.45),0 16px 40px rgba(0,0,0,.38);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#131418;
+  --surface:#1C1D23;
+  --surface2:#23252C;
+  --sunken:#101116;
+  --line:#30333B;
+  --line2:#454955;
+  --ink:#ECEDF1;
+  --ink2:#9BA1AD;
+  --ink3:#6C7280;
+  --focus:#74B8DD;
+  --danger:#D98078;
+  --shadow-1:0 1px 2px rgba(0,0,0,.45);
+  --shadow-2:0 2px 6px rgba(0,0,0,.45),0 16px 40px rgba(0,0,0,.38);
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  background:var(--ground);
+  color:var(--ink);
+  font-family:var(--ui);
+  font-size:14px;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  overflow:hidden;
+}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:4px}
+
+/* ── shell ────────────────────────────────────────────── */
+.app{display:flex;flex-direction:column;height:100dvh;min-height:0}
+
+.topbar{
+  flex:0 0 auto;display:flex;align-items:center;gap:18px;
+  padding:0 18px;height:54px;
+  background:var(--surface);border-bottom:1px solid var(--line);
+}
+.brand{display:flex;align-items:baseline;gap:10px;min-width:0}
+.brand-mark{
+  width:13px;height:18px;border-radius:2px;align-self:center;
+  background:var(--foil);background-size:220% 100%;
+  box-shadow:0 0 0 1px rgba(0,0,0,.14) inset;
+  animation:foilshift 9s linear infinite;
+}
+@keyframes foilshift{to{background-position:220% 0}}
+@media (prefers-reduced-motion:reduce){.brand-mark{animation:none}}
+.brand-name{font-weight:900;font-size:17px;letter-spacing:.06em;white-space:nowrap}
+.brand-sub{font-family:var(--mono);font-size:10px;letter-spacing:.22em;color:var(--ink3);white-space:nowrap}
+@media (max-width:560px){.brand-sub{display:none}}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+
+.main{flex:1 1 auto;display:grid;grid-template-columns:minmax(0,1fr) 372px;min-height:0}
+@media (max-width:900px){
+  body{overflow:auto}
+  .app{height:auto;min-height:100dvh}
+  .main{grid-template-columns:minmax(0,1fr)}
+}
+
+/* ── stage ────────────────────────────────────────────── */
+.stage{
+  min-width:0;min-height:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:14px;
+  padding:24px;
+  background:
+    radial-gradient(120% 90% at 50% 0%,color-mix(in srgb,var(--surface) 55%,transparent),transparent 70%),
+    var(--ground);
+}
+.plate{
+  position:relative;
+  width:min(100%,calc((100dvh - 348px) * 0.7143), 450px);
+  aspect-ratio:750/1050;
+}
+@media (max-width:900px){.plate{width:min(100%,340px)}}
+.plate::before{
+  content:"";position:absolute;inset:-19px;
+  border:1px dashed var(--line2);opacity:.55;border-radius:4px;pointer-events:none;
+}
+.mark{position:absolute;width:15px;height:15px;pointer-events:none;color:var(--ink3)}
+.mark::before,.mark::after{content:"";position:absolute;background:currentColor}
+.mark::before{width:15px;height:1px}
+.mark::after{width:1px;height:15px}
+.mark.tl{top:-28px;left:-28px}.mark.tl::before{bottom:0;left:0}.mark.tl::after{bottom:0;left:0}
+.mark.tr{top:-28px;right:-28px}.mark.tr::before{bottom:0;right:0}.mark.tr::after{bottom:0;right:0}
+.mark.bl{bottom:-28px;left:-28px}.mark.bl::before{top:0;left:0}.mark.bl::after{top:0;left:0}
+.mark.br{bottom:-28px;right:-28px}.mark.br::before{top:0;right:0}.mark.br::after{top:0;right:0}
+
+#card{
+  display:block;width:100%;height:100%;border-radius:14px;
+  box-shadow:var(--shadow-2);
+  cursor:grab;touch-action:none;
+}
+#card.dragging{cursor:grabbing}
+.dropzone-live #card{box-shadow:0 0 0 3px var(--focus),var(--shadow-2)}
+.drop-hint{
+  position:absolute;left:0;top:0;width:100%;height:100%;
+  display:grid;place-content:center;gap:6px;justify-items:center;
+  border-radius:10px;pointer-events:none;text-align:center;padding:16px;
+  color:#fff;background:rgba(14,16,22,.44);
+  font-size:13px;letter-spacing:.04em;line-height:1.8;
+}
+.drop-hint[hidden]{display:none}
+.drop-hint .di{width:30px;height:30px;border:1.5px dashed currentColor;border-radius:7px;position:relative;opacity:.85}
+.drop-hint .di::after{content:"";position:absolute;left:7px;right:7px;top:12px;height:1.5px;background:currentColor}
+.drop-hint .di::before{content:"";position:absolute;top:7px;bottom:7px;left:13.5px;width:1.5px;background:currentColor}
+.stage-note{
+  margin:0;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;
+  color:var(--ink3);text-align:center;max-width:44ch;line-height:1.8;
+}
+
+/* ── rail ─────────────────────────────────────────────── */
+.rail{
+  min-height:0;overflow-y:auto;overscroll-behavior:contain;
+  background:var(--surface);border-left:1px solid var(--line);
+}
+@media (max-width:900px){.rail{border-left:0;border-top:1px solid var(--line);overflow:visible}}
+
+.panel{border-bottom:1px solid var(--line)}
+.panel>summary{
+  display:flex;align-items:center;gap:9px;cursor:pointer;list-style:none;
+  padding:12px 16px;user-select:none;
+}
+.panel>summary::-webkit-details-marker{display:none}
+.panel>summary:hover{background:var(--surface2)}
+.panel-title{font-weight:700;font-size:13.5px;letter-spacing:.03em}
+.panel-tag{
+  margin-left:auto;font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;
+  color:var(--ink3);text-transform:uppercase;
+}
+.chev{width:8px;height:8px;border-right:1.6px solid var(--ink3);border-bottom:1.6px solid var(--ink3);
+  transform:rotate(-45deg);transition:transform .18s ease;flex:0 0 auto;margin-right:1px}
+.panel[open]>summary .chev{transform:rotate(45deg)}
+@media (prefers-reduced-motion:reduce){.chev{transition:none}}
+.panel-body{padding:2px 16px 18px;display:flex;flex-direction:column;gap:13px}
+
+.row{display:flex;flex-direction:column;gap:5px}
+.row-h{display:flex;align-items:center;gap:9px}
+.lbl{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;color:var(--ink3);text-transform:uppercase}
+.hint{font-size:11px;line-height:1.65;color:var(--ink3)}
+
+input[type=text],input[type=number],textarea,select{
+  width:100%;background:var(--surface2);color:var(--ink);
+  border:1px solid var(--line);border-radius:var(--r);
+  padding:8px 10px;transition:border-color .15s ease,background .15s ease;
+}
+input[type=text]:hover,input[type=number]:hover,textarea:hover,select:hover{border-color:var(--line2)}
+input[type=text]:focus,input[type=number]:focus,textarea:focus,select:focus{
+  outline:none;border-color:var(--focus);background:var(--surface);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--focus) 18%,transparent);
+}
+textarea{resize:vertical;min-height:66px;line-height:1.7}
+select{appearance:none;padding-right:28px;cursor:pointer;
+  background-image:linear-gradient(45deg,transparent 50%,var(--ink3) 50%),linear-gradient(135deg,var(--ink3) 50%,transparent 50%);
+  background-position:calc(100% - 15px) 51%,calc(100% - 10px) 51%;
+  background-size:5px 5px,5px 5px;background-repeat:no-repeat;
+}
+input[type=number]{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+.btn{
+  border:1px solid var(--line2);background:var(--surface2);color:var(--ink);
+  border-radius:var(--r);padding:8px 13px;cursor:pointer;font-weight:500;
+  transition:background .15s ease,border-color .15s ease,transform .08s ease;
+  white-space:nowrap;
+}
+.btn:hover{background:var(--surface);border-color:var(--ink3)}
+.btn:active{transform:translateY(1px)}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn-ghost{border-color:transparent;background:transparent;color:var(--ink2)}
+.btn-ghost:hover{background:var(--surface2);border-color:var(--line)}
+.btn-danger{color:var(--danger);border-color:transparent;background:transparent;padding:4px 8px;font-size:11.5px}
+.btn-danger:hover{background:color-mix(in srgb,var(--danger) 12%,transparent);border-color:transparent}
+.btn-primary{
+  position:relative;border-color:transparent;color:#15161B;font-weight:700;
+  background:var(--foil);background-size:230% 100%;
+  box-shadow:var(--shadow-1);
+}
+.btn-primary:hover{background-position:60% 0}
+.btn-primary:disabled{opacity:.5;cursor:default}
+
+/* segmented control */
+.seg{display:flex;gap:0;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--surface2)}
+.seg button{
+  flex:1;min-width:0;border:0;background:transparent;color:var(--ink2);
+  padding:8px 6px;cursor:pointer;font-size:12.5px;font-weight:500;
+  border-right:1px solid var(--line);transition:color .15s ease,background .15s ease;
+}
+.seg button:last-child{border-right:0}
+.seg button:hover{background:var(--surface);color:var(--ink)}
+.seg button[aria-pressed=true]{
+  color:#15161B;font-weight:700;
+  background:var(--foil);background-size:230% 100%;
+}
+
+/* toggle switch */
+.tgl{display:flex;align-items:center;gap:9px;cursor:pointer;user-select:none}
+.tgl input{position:absolute;opacity:0;width:0;height:0}
+.tgl .track{
+  width:34px;height:19px;border-radius:99px;background:var(--sunken);
+  border:1px solid var(--line2);position:relative;flex:0 0 auto;transition:background .18s ease,border-color .18s ease;
+}
+.tgl .track::after{
+  content:"";position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:99px;
+  background:var(--ink3);transition:transform .18s ease,background .18s ease;
+}
+.tgl input:checked+.track{background:var(--foil);background-size:200% 100%;border-color:transparent}
+.tgl input:checked+.track::after{transform:translateX(15px);background:#1A1B21}
+.tgl input:focus-visible+.track{outline:2px solid var(--focus);outline-offset:2px}
+.tgl .tname{font-size:13px;font-weight:500}
+@media (prefers-reduced-motion:reduce){.tgl .track,.tgl .track::after{transition:none}}
+
+.group{display:flex;flex-direction:column;gap:9px}
+.group.off{opacity:.4}
+.group.off .group-body{pointer-events:none}
+.group-body{display:flex;flex-direction:column;gap:9px}
+
+/* swatches */
+.swatches{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.sw{
+  position:relative;border:1px solid var(--line);border-radius:var(--r);
+  padding:0;cursor:pointer;overflow:hidden;background:none;
+  height:52px;display:flex;flex-direction:column;justify-content:flex-end;
+  transition:border-color .15s ease,transform .08s ease;
+}
+.sw:hover{transform:translateY(-1px)}
+.sw .swfill{position:absolute;inset:0}
+.sw .swname{
+  position:relative;font-size:10.5px;font-weight:700;letter-spacing:.06em;
+  padding:2px 0 4px;text-align:center;text-shadow:0 1px 3px rgba(0,0,0,.55);
+}
+.sw[aria-pressed=true]{border-color:transparent;box-shadow:0 0 0 2.5px var(--focus)}
+.sw[aria-pressed=true]::after{
+  content:"";position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:99px;background:#fff;
+  box-shadow:0 0 0 1px rgba(0,0,0,.35);
+}
+
+/* stat + skill rows */
+.statrow{display:grid;grid-template-columns:minmax(0,1fr) 74px auto;gap:6px;align-items:center}
+.statrow input[type=text]{padding:6px 9px}
+.statrow input[type=number]{padding:6px 8px;text-align:right}
+.skillcard{
+  border:1px solid var(--line);border-radius:var(--r);padding:10px;
+  display:flex;flex-direction:column;gap:7px;background:var(--surface2);
+}
+.skillcard-head{display:flex;align-items:center;gap:7px}
+.skillcard-head .lbl{flex:0 0 auto}
+.skillcard-head .btn-danger{margin-left:auto}
+.skillcard textarea{min-height:52px;background:var(--surface)}
+.addbtn{align-self:flex-start}
+
+.rangewrap{display:flex;align-items:center;gap:10px}
+input[type=range]{
+  flex:1;min-width:0;appearance:none;background:transparent;height:20px;cursor:pointer;
+}
+input[type=range]::-webkit-slider-runnable-track{height:3px;background:var(--line2);border-radius:99px}
+input[type=range]::-moz-range-track{height:3px;background:var(--line2);border-radius:99px}
+input[type=range]::-webkit-slider-thumb{
+  appearance:none;width:15px;height:15px;border-radius:99px;background:var(--surface);
+  border:1.5px solid var(--ink2);margin-top:-6px;box-shadow:var(--shadow-1);
+}
+input[type=range]::-moz-range-thumb{
+  width:15px;height:15px;border-radius:99px;background:var(--surface);
+  border:1.5px solid var(--ink2);box-shadow:var(--shadow-1);
+}
+.rangeval{font-family:var(--mono);font-size:11px;color:var(--ink2);min-width:44px;text-align:right;font-variant-numeric:tabular-nums}
+
+input[type=color]{
+  width:44px;height:32px;padding:2px;background:var(--surface2);
+  border:1px solid var(--line);border-radius:var(--r);cursor:pointer;
+}
+
+.toast{
+  position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(12px);
+  background:var(--ink);color:var(--ground);padding:9px 17px;border-radius:99px;
+  font-size:12.5px;font-weight:500;letter-spacing:.02em;box-shadow:var(--shadow-2);
+  opacity:0;pointer-events:none;transition:opacity .2s ease,transform .2s ease;z-index:50;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ── project name in the top bar ───────────────────────── */
+.projname{
+  width:auto;min-width:0;flex:0 1 240px;margin-left:6px;
+  background:transparent;border:1px solid transparent;border-radius:var(--r);
+  padding:5px 9px;font-size:12.5px;color:var(--ink2);
+}
+.projname:hover{border-color:var(--line);background:var(--surface2)}
+.projname:focus{color:var(--ink)}
+@media (max-width:760px){.projname{display:none}}
+
+/* ── deck strip ───────────────────────────────────────── */
+.deck{
+  width:min(100%,720px);display:flex;flex-direction:column;gap:8px;
+  padding-top:4px;border-top:1px solid var(--line);
+}
+.deck-rail{
+  display:flex;gap:8px;overflow-x:auto;padding:8px 2px 4px;
+  scrollbar-width:thin;
+}
+.deck-card{
+  position:relative;flex:0 0 auto;width:64px;padding:0;cursor:pointer;
+  border:1px solid var(--line);border-radius:7px;background:var(--surface2);
+  overflow:hidden;transition:border-color .15s ease,transform .1s ease;
+}
+.deck-card:hover{transform:translateY(-2px);border-color:var(--ink3)}
+.deck-card canvas{display:block;width:100%;height:auto;background:var(--sunken)}
+.deck-card .dcn{
+  display:block;font-family:var(--mono);font-size:9px;letter-spacing:.06em;
+  color:var(--ink3);padding:3px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.deck-card[aria-current=true]{border-color:transparent;box-shadow:0 0 0 2.5px var(--focus)}
+.deck-card[aria-current=true] .dcn{color:var(--ink);font-weight:700}
+.deck-tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center}
+
+/* ── semantic roles ───────────────────────────────────── */
+.semgroup{display:flex;flex-direction:column;gap:6px}
+.semlist{display:flex;flex-direction:column;gap:5px}
+.semrow{
+  display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;
+  gap:8px;align-items:center;
+}
+.semrow .semsw{
+  width:22px;height:22px;border-radius:5px;flex:0 0 auto;
+  box-shadow:0 0 0 1px var(--line) inset,0 1px 2px rgba(0,0,0,.18);
+}
+.semrow .semlab{display:flex;flex-direction:column;line-height:1.25;min-width:0}
+.semrow .semlab b{font-size:12px;font-weight:700;letter-spacing:.02em}
+.semrow .semlab i{
+  font-style:normal;font-size:10.5px;color:var(--ink3);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.semrow .semsrc{
+  font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--ink3);
+  border:1px solid var(--line);border-radius:99px;padding:1px 6px;white-space:nowrap;
+}
+.semrow.set .semsrc{color:var(--focus);border-color:var(--focus)}
+.semrow.auto .semsrc{color:var(--ink2);border-color:var(--line2)}
+.semrow input[type=color]{width:38px;height:27px}
+.semrow .btn-danger{padding:3px 6px;font-size:11px;visibility:hidden}
+.semrow.set .btn-danger{visibility:visible}
+.semrow.art .semsw{border-radius:99px}
+
+hr.rule{border:0;border-top:1px solid var(--line);margin:3px 0}
+
+/* ── before / after ───────────────────────────────────── */
+.stagewrap{display:flex;gap:16px;align-items:flex-start;justify-content:center;max-width:100%}
+.plate-cmp{position:relative}
+.plate-cmp[hidden]{display:none}
+.plate-cmp canvas{
+  display:block;width:100%;height:100%;border-radius:14px;box-shadow:var(--shadow-2);
+}
+.cmplabel,.plate::after{
+  font-family:var(--mono);font-size:9px;letter-spacing:.18em;color:var(--ink3);
+}
+.cmplabel{position:absolute;left:0;top:-17px}
+.stagewrap.cmp .plate::after{content:"AFTER";position:absolute;left:0;top:-17px}
+.stagewrap.cmp .plate,.stagewrap.cmp .plate-cmp{width:min(46%,340px)}
+.stagewrap.cmp .plate::before,.stagewrap.cmp .mark{display:none}
+.stage-foot{display:flex;flex-direction:column;align-items:center;gap:8px}
+
+/* ── analysis ─────────────────────────────────────────── */
+.usebar{
+  display:flex;height:16px;border-radius:5px;overflow:hidden;
+  box-shadow:0 0 0 1px var(--line) inset;background:var(--sunken);
+}
+.usebar span{display:block;height:100%}
+.uselegend{display:flex;flex-direction:column;gap:4px}
+.legrow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;font-size:12px}
+.legrow .dot{width:10px;height:10px;border-radius:3px;box-shadow:0 0 0 1px var(--line) inset}
+.legrow .pct{font-family:var(--mono);font-size:11.5px;color:var(--ink2);font-variant-numeric:tabular-nums}
+.legrow .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.warnlist{display:flex;flex-direction:column;gap:6px}
+.warn{
+  display:flex;gap:8px;align-items:flex-start;font-size:11.5px;line-height:1.6;
+  border:1px solid var(--line);border-left-width:3px;border-radius:6px;padding:7px 9px;
+}
+.warn .wi{font-family:var(--mono);font-size:10px;letter-spacing:.08em;flex:0 0 auto;padding-top:1px}
+.warn.ok{border-left-color:#3E8C6A;color:var(--ink2)}
+.warn.ok .wi{color:#3E8C6A}
+.warn.caution{border-left-color:#C08A2E}
+.warn.caution .wi{color:#C08A2E}
+.warn.bad{border-left-color:var(--danger)}
+.warn.bad .wi{color:var(--danger)}
+
+/* ── theme presets + extraction ───────────────────────── */
+.presetlist{display:flex;flex-direction:column;gap:5px}
+.presetitem{
+  display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;
+  border:1px solid var(--line);border-radius:var(--r);padding:6px 8px;background:var(--surface2);
+}
+.presetitem .pv{display:flex;gap:2px;flex:0 0 auto}
+.presetitem .pv i{width:11px;height:18px;border-radius:2px;display:block}
+.presetitem .pn{display:flex;flex-direction:column;line-height:1.3;min-width:0}
+.presetitem .pn b{font-size:12.5px;font-weight:700}
+.presetitem .pn i{font-style:normal;font-size:10.5px;color:var(--ink3);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.presetitem .pa{display:flex;gap:4px;align-items:center}
+
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chips i{
+  width:26px;height:26px;border-radius:5px;display:block;
+  box-shadow:0 0 0 1px var(--line) inset;
+}
+.candlist{display:flex;flex-direction:column;gap:6px;margin-top:9px}
+.extract{display:flex;flex-direction:column;gap:8px}
+.extract[hidden]{display:none}
+</style>
+
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span class="brand-name">絵札工房</span>
+      <span class="brand-sub">CARD FORGE</span>
+    </div>
+    <input type="text" id="fProject" class="projname" placeholder="プロジェクト名" maxlength="60" aria-label="プロジェクト名">
+    <div class="topbar-right">
+      <select id="exportScale" aria-label="書き出しサイズ" style="width:auto">
+        <option value="1">750 × 1050</option>
+        <option value="2" selected>1500 × 2100</option>
+        <option value="3">2250 × 3150</option>
+      </select>
+      <button id="btnExport" class="btn btn-primary">PNGで保存</button>
+    </div>
+  </header>
+
+  <main class="main">
+    <section class="stage" id="stage">
+      <div class="stagewrap" id="stageWrap">
+      <div class="plate" id="plate">
+        <span class="mark tl" aria-hidden="true"></span>
+        <span class="mark tr" aria-hidden="true"></span>
+        <span class="mark bl" aria-hidden="true"></span>
+        <span class="mark br" aria-hidden="true"></span>
+        <canvas id="card" width="750" height="1050" aria-label="カードのプレビュー"></canvas>
+        <div class="drop-hint" id="dropHint">
+          <span class="di" aria-hidden="true"></span>
+          <span>キャラ画像をドロップ<br>または Ctrl+V で貼り付け</span>
+        </div>
+      </div>
+      <div class="plate plate-cmp" id="plateBefore" hidden>
+        <canvas id="cardBefore" width="750" height="1050" aria-label="調整前のカード"></canvas>
+        <span class="cmplabel">BEFORE</span>
+      </div>
+      </div>
+      <div class="stage-foot">
+        <p class="stage-note">画像はドラッグで位置調整・ホイールで拡大縮小</p>
+        <button class="btn btn-sm btn-ghost" id="btnCompare" aria-pressed="false">Before / After 比較</button>
+      </div>
+
+      <div class="deck" aria-label="プロジェクト内のカード">
+        <div class="deck-rail" id="deckRail"></div>
+        <div class="deck-tools">
+          <button class="btn btn-sm" id="btnCardAdd">＋ 新しいカード</button>
+          <button class="btn btn-sm btn-ghost" id="btnCardDup">複製</button>
+          <button class="btn btn-sm btn-ghost" id="btnCardLeft" aria-label="前へ移動">←</button>
+          <button class="btn btn-sm btn-ghost" id="btnCardRight" aria-label="後ろへ移動">→</button>
+          <button class="btn btn-sm btn-danger" id="btnCardDel">削除</button>
+        </div>
+      </div>
+    </section>
+
+    <aside class="rail">
+
+      <details class="panel" open>
+        <summary><span class="chev" aria-hidden="true"></span><span class="panel-title">プロジェクト</span><span class="panel-tag">project</span></summary>
+        <div class="panel-body">
+          <div class="row-h">
+            <button class="btn btn-sm" id="btnProjSave">プロジェクトを保存</button>
+            <button class="btn btn-sm" id="btnProjOpen">読み込み</button>
+          </div>
+          <input type="file" id="projInput" accept="application/json,.json" class="sr">
+          <div class="row">
+            <span class="lbl">保存に含める画像</span>
+            <select id="fImgMode">
+              <option value="jpeg" selected>圧縮して含める（推奨・軽い）</option>
+              <option value="raw">原寸のまま含める（重い）</option>
+              <option value="none">含めない（文字と配色だけ）</option>
+            </select>
+          </div>
+          <button class="btn btn-sm" id="btnBatch" style="align-self:flex-start">全カードをPNGで書き出す</button>
+          <p class="hint" id="projHint">保存したファイルを読み込むと、カード・配色・画像がまとめて戻ります。ブラウザへの自動保存には画像は含まれません。</p>
+        </div>
+      </details>
+
+      <details class="panel" open>
+        <summary><span class="chev" aria-hidden="true"></span><span class="panel-title">画像</span><span class="panel-tag">art</span></summary>
+        <div class="panel-body">
+          <div class="row-h">
+            <button class="btn btn-sm" id="btnPick">画像を選ぶ</button>
+            <button class="btn btn-sm btn-ghost" id="btnFit">位置をリセット</button>
+            <button class="btn btn-sm btn-ghost" id="btnClearImg">外す</button>
+          </div>
+          <input type="file" id="fileInput" accept="image/*" class="sr">
+          <div class="row">
+            <span class="lbl">拡大率</span>
+            <div class="rangewrap">
+              <input type="range" id="imgZoom" min="50" max="320" value="100" step="1">
+              <span class="rangeval" id="imgZoomVal">100%</span>
+            </div>
+          </div>
+          <p class="hint">プレビュー上でドラッグすると見せたい部分に寄せられます。</p>
+        </div>
+      </details>
+
+      <details class="panel" open>
+        <summary><span class="chev" aria-hidden="true"></span><span class="panel-title">レイアウト</span><span class="panel-tag">layout</span></summary>
+        <div class="panel-body">
+          <div class="row">
+            <span class="lbl">カードの型</span>
+            <div class="seg" id="segLayout" role="group" aria-label="カードの型">
+              <button type="button" data-v="battle" aria-pressed="true">バトル</button>
+              <button type="button" data-v="profile" aria-pressed="false">推しカード</button>
+            </div>
+          </div>
+          <div class="row">
+            <span class="lbl">書体</span>
+            <div class="seg" id="segFont" role="group" aria-label="書体">
+              <button type="button" data-v="gothic" aria-pressed="true">ゴシック</button>
+              <button type="button" data-v="mincho" aria-pressed="false">明朝</button>
+              <button type="button" data-v="impact" aria-pressed="false">極太</button>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="panel" open>
+        <summary><span class="chev" aria-hidden="true"></span><span class="panel-title">配色</span><span class="panel-tag">palette</span></summary>
+        <div class="panel-body">
+          <div class="row">
+            <span class="lbl">暗い地</span>
+            <div class="swatches" id="swDark"></div>
+          </div>
+          <div class="row">
+            <span class="lbl">明るい地</span>
+            <div class="swatches" id="swLight"></div>
+          </div>
+          <div class="row">
+            <span class="lbl">箔・特殊</span>
+            <div class="swatches" id="swFoil"></div>
+          </div>
+          <div class="row">
+            <span class="lbl">自由配色</span>
+            <div class="row-h">
+              <input type="color" id="customColor" value="#7A5CE0" aria-label="基調色">
+              <div class="seg" id="segCustomMode" role="group" aria-label="地の明るさ" style="flex:1">
+                <button type="button" data-v="dark" aria-pressed="true">暗い地</button>
+                <button type="button" data-v="light" aria-pressed="false">明るい地</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="panel" open>
+        <summary><span class="chev" aria-hidden="true"></span><span class="panel-title">地・枠・質感</span><span class="panel-tag">surface</span></summary>
+        <div class="panel-body">
+          <div class="row">
+            <span class="lbl">地の描き方</span>
+            <select id="fBgStyle">
+              <option value="diag">斜めグラデーション</option>
+              <option value="vert">上下グラデーション</option>
+              <option value="plain">単色</option>
+              <option value="radial">中央から放射</option>
+              <option value="rays">光条</option>
+              <option value="hatch">斜線</option>
+              <option value="dots">ドット</option>
+              <option value="checker">市松</option>
+              <option value="seigaiha">青海波</option>
+            </select>
+          </div>
+          <div class="row">
+            <span class="lbl">枠の形</span>
+            <select id="fFrameStyle">
+              <option value="standard">標準</option>
+              <option value="thin">細枠</option>
+              <option value="bold">太枠</option>
+              <option value="double">二重線</option>
+              <option value="ornate">角飾り</option>
+              <option value="none">枠なし</option>
+            </select>
+          </div>
+          <div class="row">
+            <span class="lbl">質感</span>
+            <select id="fTexture">
+              <option value="none">なし</option>
+              <option value="holo">ホロ</option>
+              <option value="streak">箔スジ</option>
+              <option value="grain">紙目</option>
+            </select>
+          </div>
+          <div class="row">
+            <span class="lbl">効果の強さ</span>
+            <div class="rangewrap">
+              <input type="range" id="fTexAmt" min="10" max="100" value="45" step="1">
+              <span class="rangeval" id="fTexAmtVal">45%</span>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="panel" open>
+        <summary><span class="chev" aria-hidden="true"></span><span class="panel-title">セマンティックカラー</span><span class="panel-tag">roles</span></summary>
+        <div class="panel-body">
+          <div class="semgroup">
+            <span class="lbl">カードUI</span>
+            <div id="semUi" class="semlist"></div>
+          </div>
+          <div class="semgroup">
+            <span class="lbl">文字</span>
+            <div id="semText" class="semlist"></div>
+          </div>
+          <div class="semgroup">
+            <span class="lbl">元画像の色（カードには塗りません）</span>
+            <div id="semArt" class="semlist"></div>
+            <p class="hint">Character と Magic はイラストから読み取った参照色です。解析とテーマ生成に使うだけで、絵の色はそのまま残ります。</p>
+          </div>
+          <button class="btn btn-sm btn-ghost" id="btnSemReset" style="align-self:flex-start">すべて配色に戻す</button>
+        </div>
+      </details>
+
+      <details class="panel" open>
+        <summary><span class="chev" aria-hidden="true"></span><span class="panel-title">UI調整</span><span class="panel-tag">tuning</span></summary>
+        <div class="panel-body">
+          <div class="row">
+            <span class="lbl">UI彩度</span>
+            <div class="rangewrap">
+              <input type="range" id="fUiSat" min="0" max="200" value="100" step="1">
+              <span class="rangeval" id="fUiSatVal">100%</span>
+            </div>
+          </div>
+          <div class="row">
+            <span class="lbl">UI明度</span>
+            <div class="rangewrap">
+              <input type="range" id="fUiLight" min="-40" max="40" value="0" step="1">
+              <span class="rangeval" id="fUiLightVal">0</span>
+            </div>
+          </div>
+          <div class="row">
+            <span class="lbl">UI透明度</span>
+            <div class="rangewrap">
+              <input type="range" id="fUiAlpha" min="10" max="100" value="100" step="1">
+              <span class="rangeval" id="fUiAlphaVal">100%</span>
+            </div>
+          </div>
+          <p class="hint">彩度と明度は Base・UI・Frame にかかります。Accent と文字はそのままです。</p>
+          <div class="row">
+            <span class="lbl">Accent使用量</span>
+            <div class="rangewrap">
+              <input type="range" id="fAccentAmt" min="0" max="100" value="55" step="1">
+              <span class="rangeval" id="fAccentAmtVal">55%</span>
+            </div>
+            <p class="hint" id="accentWhere"></p>
+          </div>
+        </div>
+      </details>
+
+      <details class="panel">
+        <summary><span class="chev" aria-hidden="true"></span><span class="panel-title">下部グラデーション</span><span class="panel-tag">scrim</span></summary>
+        <div class="panel-body">
+          <p class="hint">推しカードで説明文の下に敷くグラデーションです。</p>
+          <div class="row">
+            <span class="lbl">位置</span>
+            <div class="rangewrap">
+              <input type="range" id="fScrimPos" min="5" max="90" value="45" step="1">
+              <span class="rangeval" id="fScrimPosVal">45%</span>
+            </div>
+          </div>
+          <div class="row">
+            <span class="lbl">強度</span>
+            <div class="rangewrap">
+              <input type="range" id="fScrimStr" min="0" max="100" value="88" step="1">
+              <span class="rangeval" id="fScrimStrVal">88%</span>
+            </div>
+          </div>
+          <div class="row">
+            <span class="lbl">透明度</span>
+            <div class="rangewrap">
+              <input type="range" id="fScrimAlpha" min="0" max="100" value="100" step="1">
+              <span class="rangeval" id="fScrimAlphaVal">100%</span>
+            </div>
+          </div>
+          <div class="row">
+            <span class="lbl">Softness</span>
+            <div class="rangewrap">
+              <input type="range" id="fScrimSoft" min="0" max="100" value="50" step="1">
+              <span class="rangeval" id="fScrimSoftVal">50</span>
+            </div>
+          </div>
+          <button class="btn btn-sm btn-ghost" id="btnScrimReset" style="align-self:flex-start">既定に戻す</button>
+        </div>
+      </details>
+
+      <details class="panel">
+        <summary><span class="chev" aria-hidden="true"></span><span class="panel-title">テーマプリセット</span><span class="panel-tag">themes</span></summary>
+        <div class="panel-body">
+          <div id="presetList" class="presetlist"></div>
+          <div class="row-h">
+            <input type="text" id="fPresetName" placeholder="このテーマの名前" maxlength="30">
+            <button class="btn btn-sm" id="btnPresetSave">保存</button>
+          </div>
+          <hr class="rule">
+          <span class="lbl">画像からテーマを作る</span>
+          <button class="btn btn-sm" id="btnExtract" style="align-self:flex-start">読み込んだ画像から色を拾う</button>
+          <div id="extractOut" class="extract" hidden>
+            <div class="chips" id="extractChips"></div>
+            <div id="candList" class="candlist"></div>
+          </div>
+          <p class="hint">主要色を拾って Character / Magic を決め、そこから UI 側の候補を3案つくります。</p>
+        </div>
+      </details>
+
+      <details class="panel">
+        <summary><span class="chev" aria-hidden="true"></span><span class="panel-title">解析</span><span class="panel-tag">analysis</span></summary>
+        <div class="panel-body">
+          <button class="btn btn-sm" id="btnAnalyze" style="align-self:flex-start">今のカードを解析する</button>
+          <div id="analysisOut" hidden>
+            <div class="row">
+              <span class="lbl">色の使用量</span>
+              <div class="usebar" id="useBar"></div>
+              <div class="uselegend" id="useLegend"></div>
+            </div>
+            <div class="row">
+              <span class="lbl">カラー分類</span>
+              <div class="uselegend" id="useClass"></div>
+            </div>
+            <div class="row">
+              <span class="lbl">チェック</span>
+              <div id="warnList" class="warnlist"></div>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="panel" open>
+        <summary><span class="chev" aria-hidden="true"></span><span class="panel-title">文字</span><span class="panel-tag">text</span></summary>
+        <div class="panel-body">
+
+          <div class="group" id="gName">
+            <label class="tgl"><input type="checkbox" data-toggle="name" checked><span class="track"></span><span class="tname">キャラ名</span></label>
+            <div class="group-body">
+              <input type="text" id="fName" placeholder="名前を入れる" maxlength="40">
+            </div>
+          </div>
+
+          <div class="group" id="gSubtitle">
+            <label class="tgl"><input type="checkbox" data-toggle="subtitle" checked><span class="track"></span><span class="tname">肩書き・属性</span></label>
+            <div class="group-body">
+              <input type="text" id="fSubtitle" placeholder="例：蒼角の剣聖" maxlength="40">
+            </div>
+          </div>
+
+          <div class="group" id="gDesc">
+            <label class="tgl"><input type="checkbox" data-toggle="desc" checked><span class="track"></span><span class="tname">説明文</span></label>
+            <div class="group-body">
+              <textarea id="fDesc" placeholder="キャラクターの紹介文やセリフ" maxlength="300"></textarea>
+            </div>
+          </div>
+
+          <div class="group" id="gRarity">
+            <label class="tgl"><input type="checkbox" data-toggle="rarity" checked><span class="track"></span><span class="tname">レアリティ</span></label>
+            <div class="group-body">
+              <input type="text" id="fRarity" placeholder="例：SSR / ★★★★☆" maxlength="12">
+            </div>
+          </div>
+
+          <div class="group" id="gNumber">
+            <label class="tgl"><input type="checkbox" data-toggle="number" checked><span class="track"></span><span class="tname">カード番号・作者名</span></label>
+            <div class="group-body">
+              <input type="text" id="fNumber" placeholder="例：NO.001 / 128" maxlength="24">
+              <input type="text" id="fAuthor" placeholder="例：illust by ..." maxlength="28">
+            </div>
+          </div>
+
+        </div>
+      </details>
+
+      <details class="panel" open>
+        <summary><span class="chev" aria-hidden="true"></span><span class="panel-title">ステータス</span><span class="panel-tag">stats</span></summary>
+        <div class="panel-body">
+          <div class="group" id="gStats">
+            <label class="tgl"><input type="checkbox" data-toggle="stats" checked><span class="track"></span><span class="tname">数値を表示する</span></label>
+            <div class="group-body">
+              <div id="statList" style="display:flex;flex-direction:column;gap:6px"></div>
+              <div class="row-h">
+                <button class="btn btn-sm addbtn" id="btnAddStat">＋ 項目を足す</button>
+                <label class="row-h" style="margin-left:auto;gap:6px">
+                  <span class="lbl">バー最大</span>
+                  <input type="number" id="fStatMax" min="1" max="99999" value="100" style="width:76px;padding:5px 8px">
+                </label>
+              </div>
+              <p class="hint">バトル面では先頭の項目がカード上部の大きな数値になります。</p>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="panel" open>
+        <summary><span class="chev" aria-hidden="true"></span><span class="panel-title">スキル・技</span><span class="panel-tag">skills</span></summary>
+        <div class="panel-body">
+          <div class="group" id="gSkills">
+            <label class="tgl"><input type="checkbox" data-toggle="skills" checked><span class="track"></span><span class="tname">技の欄を出す</span></label>
+            <div class="group-body">
+              <div id="skillList" style="display:flex;flex-direction:column;gap:9px"></div>
+              <button class="btn btn-sm addbtn" id="btnAddSkill">＋ 技を足す</button>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="panel">
+        <summary><span class="chev" aria-hidden="true"></span><span class="panel-title">その他</span><span class="panel-tag">misc</span></summary>
+        <div class="panel-body">
+          <div class="row">
+            <span class="lbl">ファイル名</span>
+            <input type="text" id="fFilename" placeholder="card" maxlength="60">
+          </div>
+          <label class="tgl"><input type="checkbox" id="optAutosave" checked><span class="track"></span><span class="tname">入力内容をこの端末に残す</span></label>
+          <button class="btn btn-sm" id="btnReset" style="align-self:flex-start">このカードをまっさらにする</button>
+          <p class="hint">自動保存には画像は含まれません。画像も残すならプロジェクト保存を使ってください。</p>
+        </div>
+      </details>
+
+    </aside>
+  </main>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ══════════════════════════════════════════════════════════
+   絵札工房 — trading card forge
+   ══════════════════════════════════════════════════════════ */
+
+var W = 750, H = 1050;
+var FRAME = 18, PAD = 44;
+var HEAD_Y = 46, HEAD_H = 74;
+var ART_Y = 136;
+var BODY_BOTTOM = 958;
+
+/* ── palettes ─────────────────────────────────────────── */
+var D = 'dark', L = 'light';
+var THEMES = [
+  /* 暗い地 */
+  { id:'azure', name:'蒼焔', shade:D, group:'dark',
+    bg:['#0A182F','#153058'], panel:'#0E2246', frame:'#4F86C6', frameHi:'#A8D0F5',
+    accent:'#5CC6EC', accent2:'#2C5F9E', text:'#EAF4FF', sub:'#9EC2E4' },
+  { id:'ultramarine', name:'群青', shade:D, group:'dark',
+    bg:['#070B26','#161E52'], panel:'#0B1038', frame:'#4657C8', frameHi:'#AEB7F4',
+    accent:'#7484FF', accent2:'#2A3486', text:'#ECEEFF', sub:'#A9B0DA' },
+  { id:'abyss', name:'深海', shade:D, group:'dark',
+    bg:['#04161C','#0B3340'], panel:'#072028', frame:'#2E93A8', frameHi:'#9BE0EC',
+    accent:'#45D2E8', accent2:'#1D6273', text:'#E4FAFF', sub:'#93C7D4' },
+  { id:'verdant', name:'翠緑', shade:D, group:'dark',
+    bg:['#071E19','#0F3B2C'], panel:'#0C2C22', frame:'#3FA079', frameHi:'#A9E8C9',
+    accent:'#5EDCA2', accent2:'#2A6C52', text:'#E8FBF3', sub:'#9DD2BA' },
+  { id:'sulfur', name:'硫黄', shade:D, group:'dark',
+    bg:['#171B06','#353D0E'], panel:'#20260A', frame:'#9BB02A', frameHi:'#E2EF9A',
+    accent:'#C8E23F', accent2:'#63741A', text:'#F6FBE0', sub:'#C0CB8A' },
+  { id:'gold', name:'黄金', shade:D, group:'dark',
+    bg:['#1D1507','#3E2F11'], panel:'#2A1F0C', frame:'#C9A227', frameHi:'#F7E7A8',
+    accent:'#F2C94C', accent2:'#8A6C16', text:'#FFF8E2', sub:'#D9C189' },
+  { id:'amber', name:'琥珀', shade:D, group:'dark',
+    bg:['#241105','#4C2609'], panel:'#321707', frame:'#D4801F', frameHi:'#F8CE95',
+    accent:'#FFA23D', accent2:'#92510F', text:'#FFF1E0', sub:'#DCB489' },
+  { id:'copper', name:'赤銅', shade:D, group:'dark',
+    bg:['#1F0F0A','#412216'], panel:'#2B1610', frame:'#B0663F', frameHi:'#EDBB99',
+    accent:'#E08B57', accent2:'#7A4128', text:'#FCEDE4', sub:'#CFA791' },
+  { id:'crimson', name:'紅蓮', shade:D, group:'dark',
+    bg:['#280A0E','#4E141A'], panel:'#3A0F15', frame:'#C24A42', frameHi:'#F2A78F',
+    accent:'#FF7F49', accent2:'#8E2620', text:'#FFEDE5', sub:'#E3A997' },
+  { id:'nightsakura', name:'夜桜', shade:D, group:'dark',
+    bg:['#22071A','#471137'], panel:'#300B25', frame:'#C4569C', frameHi:'#F5AEDA',
+    accent:'#FF7BC0', accent2:'#832C63', text:'#FFEBF7', sub:'#DCA5C8' },
+  { id:'violet', name:'紫電', shade:D, group:'dark',
+    bg:['#160A2C','#301553'], panel:'#210F3D', frame:'#8E5FD9', frameHi:'#DCC4F7',
+    accent:'#B481FF', accent2:'#5C3499', text:'#F4ECFF', sub:'#C4B0E2' },
+  { id:'obsidian', name:'漆黒', shade:D, group:'dark',
+    bg:['#08090B','#191A20'], panel:'#101116', frame:'#4C505E', frameHi:'#9DA3B4',
+    accent:'#CBD0DE', accent2:'#383C48', text:'#F1F2F6', sub:'#9298A6' },
+
+  /* 明るい地 */
+  { id:'moon', name:'月白', shade:L, group:'light',
+    bg:['#F4F4F8','#DBDCE6'], panel:'#FBFBFD', frame:'#A7ACBE', frameHi:'#FFFFFF',
+    accent:'#5C6584', accent2:'#C4C8D8', text:'#1A1C26', sub:'#5A6076' },
+  { id:'platinum', name:'白銀', shade:L, group:'light',
+    bg:['#F7F8FA','#D6DBE3'], panel:'#FDFDFE', frame:'#99A3AF', frameHi:'#FFFFFF',
+    accent:'#4F5A67', accent2:'#C2CAD3', text:'#171A1E', sub:'#4E5762' },
+  { id:'ivory', name:'象牙', shade:L, group:'light',
+    bg:['#FBF6EC','#EBDFC7'], panel:'#FFFCF6', frame:'#C3A876', frameHi:'#FFFFFF',
+    accent:'#8A6C33', accent2:'#E0CDA4', text:'#2A2318', sub:'#6B5B41' },
+  { id:'sumi', name:'墨', shade:L, group:'light',
+    bg:['#F6F5F2','#DCDAD3'], panel:'#FCFBF9', frame:'#6E6A62', frameHi:'#FFFFFF',
+    accent:'#2B2823', accent2:'#C3BFB6', text:'#17150F', sub:'#55514A' },
+  { id:'sakura', name:'桜霞', shade:L, group:'light',
+    bg:['#FDF1F4','#F2D9E2'], panel:'#FFF8FA', frame:'#D68CA3', frameHi:'#FFFFFF',
+    accent:'#DC6288', accent2:'#F0C2CF', text:'#3A2028', sub:'#8B5D6C' },
+  { id:'wisteria', name:'藤', shade:L, group:'light',
+    bg:['#F5F1FC','#DED5F1'], panel:'#FBF9FF', frame:'#A692D6', frameHi:'#FFFFFF',
+    accent:'#7256B5', accent2:'#D5C9EE', text:'#241C36', sub:'#5E5280' },
+  { id:'wakakusa', name:'若草', shade:L, group:'light',
+    bg:['#F1F8EC','#D7EACA'], panel:'#F9FCF6', frame:'#8FB870', frameHi:'#FFFFFF',
+    accent:'#4C7F38', accent2:'#CBE0BB', text:'#1D2A16', sub:'#4E6440' },
+  { id:'sora', name:'空', shade:L, group:'light',
+    bg:['#EFF6FC','#D0E5F4'], panel:'#F8FBFE', frame:'#82AFD1', frameHi:'#FFFFFF',
+    accent:'#2F72A5', accent2:'#BCD8EC', text:'#14232E', sub:'#476076' },
+
+  /* 箔・特殊 */
+  { id:'prism', name:'虹彩', shade:D, group:'foil',
+    foil:['#8FE9E2','#9DBBFF','#DCA6F2','#FFCE96','#8FE9E2'],
+    bg:['#0D0D14','#1D1D2C'], panel:'#141420', frame:'#8FE9E2', frameHi:'#FFD5A8',
+    accent:'#9DBBFF', accent2:'#3A3A56', text:'#F3F4FA', sub:'#A9AECB' },
+  { id:'aurora', name:'オーロラ', shade:D, group:'foil',
+    foil:['#5BE9B9','#57C7F5','#8E7BF0','#5BE9B9'],
+    bg:['#04141B','#0D2D3E'], panel:'#08202C', frame:'#4FD6C0', frameHi:'#BFF6EA',
+    accent:'#6FE0F5', accent2:'#1E5468', text:'#E8FCFF', sub:'#98CBD8' },
+  { id:'silverfoil', name:'銀箔', shade:D, group:'foil',
+    foil:['#E8ECF2','#AEB8C6','#FFFFFF','#9AA5B4','#E8ECF2'],
+    bg:['#101216','#25282F'], panel:'#16181D', frame:'#C3CAD5', frameHi:'#FFFFFF',
+    accent:'#DDE3EB', accent2:'#3A3F48', text:'#F5F7FA', sub:'#A7AEB9' },
+  { id:'blackgold', name:'黒金', shade:D, group:'foil',
+    foil:['#F6DFA0','#C9A227','#FFF1C4','#A8811A','#F6DFA0'],
+    bg:['#0A0906','#1B160A'], panel:'#100E08', frame:'#C9A227', frameHi:'#F8E9B5',
+    accent:'#E8C558', accent2:'#3A3011', text:'#FBF4E1', sub:'#B8A878' }
+];
+
+/* ── semantic roles ───────────────────────────────────────
+   Colour is managed by ROLE, not by widget. Character and Magic are
+   reference colours read out of the artwork: they drive the analysis,
+   the extracted theme candidates and the classification read-out, and
+   they are never painted over the illustration — the art keeps its own
+   colours while only the card's UI follows the theme. */
+var SEM_ROLES = [
+  { k:'base',      label:'Base',      jp:'地',              kind:'ui'   },
+  { k:'ui',        label:'UI',        jp:'パネル・帯・バー',  kind:'ui'   },
+  { k:'frame',     label:'Frame',     jp:'枠',              kind:'ui'   },
+  { k:'accent',    label:'Accent',    jp:'アクセント',        kind:'ui'   },
+  { k:'character', label:'Character', jp:'キャラクター',      kind:'art'  },
+  { k:'magic',     label:'Magic',     jp:'魔法・エフェクト',  kind:'art'  },
+  { k:'textMain',  label:'Text Main', jp:'見出し・数値',      kind:'text' },
+  { k:'textSub',   label:'Text Sub',  jp:'本文・説明',        kind:'text' },
+  { k:'shadow',    label:'Shadow',    jp:'影',              kind:'ui'   }
+];
+var ART_ROLES = ['character','magic'];
+
+/* Where the accent is allowed to appear, cheapest-to-loudest. The
+   Accent-usage slider is a water level over this list. */
+var ACCENT_TARGETS = [
+  { k:'rarity',  at:8,  label:'レアリティ' },
+  { k:'skill',   at:22, label:'技名の印' },
+  { k:'stats',   at:36, label:'ステータスバー' },
+  { k:'frameHi', at:50, label:'枠の光沢' },
+  { k:'strip',   at:63, label:'肩書き帯' },
+  { k:'divider', at:75, label:'区切り線' },
+  { k:'footer',  at:87, label:'番号・フッター' },
+  { k:'corner',  at:96, label:'角飾り' }
+];
+
+var DEFAULT_SCRIM = { pos:45, strength:88, alpha:100, soft:50 };
+
+/* Shipped semantic themes. These set all nine roles at once. */
+var SEM_PRESETS = [
+  {
+    id:'pinkviolet', name:'ピンク×紫',
+    note:'ピンク髪・紫魔法・暗色UI',
+    themeId:'violet', bgStyle:'radial', frameStyle:'standard', texture:'none', texAmt:38,
+    sem:{
+      base:'#16101F', ui:'#241B33', frame:'#6B5A8A', accent:'#C77DFF',
+      character:'#F49AC8', magic:'#A855F7',
+      textMain:'#F5EEFB', textSub:'#BFB0D4', shadow:'#080510'
+    },
+    uiSat:55, uiLight:-6, uiAlpha:88, accentAmount:25,
+    scrim:{ pos:38, strength:90, alpha:96, soft:66 }
+  }
+];
+
+var FONTSETS = {
+  gothic: { disp:'"Zen Kaku Gothic New"', dispW:900, body:'"Zen Kaku Gothic New"', bodyW:500, bodyB:700 },
+  mincho: { disp:'"Shippori Mincho"',     dispW:800, body:'"Shippori Mincho"',     bodyW:500, bodyB:700 },
+  impact: { disp:'"Dela Gothic One"',     dispW:400, body:'"Zen Kaku Gothic New"', bodyW:500, bodyB:700 }
+};
+var FB = ',"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif';
+var MONO = '"M PLUS 1 Code",ui-monospace,Consolas,monospace';
+
+/* ── state ────────────────────────────────────────────── */
+function newCard(seed){
+  var c = {
+    layout:'battle', fontSet:'gothic', themeId:'azure',
+    bgStyle:'diag', frameStyle:'standard', texture:'none', texAmt:45,
+    custom:{ on:false, color:'#7A5CE0', mode:'dark' },
+    sem:{}, autoArt:{},
+    uiSat:100, uiLight:0, uiAlpha:100,
+    accentAmount:55,
+    scrim:{ pos:DEFAULT_SCRIM.pos, strength:DEFAULT_SCRIM.strength,
+            alpha:DEFAULT_SCRIM.alpha, soft:DEFAULT_SCRIM.soft },
+    show:{ name:true, subtitle:true, desc:true, rarity:true, number:true, stats:true, skills:true },
+    name:'', subtitle:'', desc:'', rarity:'', number:'', author:'',
+    stats:[{k:'HP',v:80},{k:'ATK',v:70},{k:'DEF',v:60},{k:'SPD',v:75}],
+    statMax:100,
+    skills:[{ n:'', t:'' }],
+    img:{ zoom:1, ox:0, oy:0 },
+    imgData:null, _img:null,
+    filename:''
+  };
+  if(seed){
+    c.name='アルジェ・ヴェルナ';
+    c.subtitle='蒼角の剣聖';
+    c.desc='氷海の果てに立つ塔で剣を学んだ。角に宿る霜が、抜刀の合図とともに白く光る。';
+    c.rarity='SSR'; c.number='NO.007'; c.author='illust / sample';
+    c.stats=[{k:'HP',v:92},{k:'ATK',v:78},{k:'DEF',v:64},{k:'SPD',v:85}];
+    c.skills=[
+      { n:'霜牙一閃', t:'相手に120ダメージ。次の自分の番、この技は使えない。' },
+      { n:'蒼角の護り', t:'受けるダメージを30軽減する。' }
+    ];
+  }
+  return c;
+}
+
+var P = { name:'', cards:[ newCard(true) ], active:0 };
+var S = P.cards[0];
+var lastArt = null, lastArtAny = null;
+var trackArt = true;
+
+/* ── color utils ──────────────────────────────────────── */
+function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+function hexToRgb(h){
+  h = String(h||'#000').replace('#','');
+  if(h.length===3) h = h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+  return [parseInt(h.slice(0,2),16)||0, parseInt(h.slice(2,4),16)||0, parseInt(h.slice(4,6),16)||0];
+}
+function rgba(hex,a){ var c=hexToRgb(hex); return 'rgba('+c[0]+','+c[1]+','+c[2]+','+a+')'; }
+function hexToHsl(hex){
+  var c=hexToRgb(hex), r=c[0]/255,g=c[1]/255,b=c[2]/255;
+  var mx=Math.max(r,g,b), mn=Math.min(r,g,b), d=mx-mn, h=0, s=0, l=(mx+mn)/2;
+  if(d){
+    s = l>0.5 ? d/(2-mx-mn) : d/(mx+mn);
+    if(mx===r) h=((g-b)/d+(g<b?6:0));
+    else if(mx===g) h=((b-r)/d+2);
+    else h=((r-g)/d+4);
+    h*=60;
+  }
+  return [h, s*100, l*100];
+}
+function hslToHex(h,s,l){
+  s=clamp(s,0,100)/100; l=clamp(l,0,100)/100;
+  var k=function(n){ return (n + h/30) % 12; };
+  var a=s*Math.min(l,1-l);
+  var f=function(n){ return l - a*Math.max(-1, Math.min(k(n)-3, Math.min(9-k(n),1))); };
+  var to=function(x){ var v=Math.round(x*255).toString(16); return v.length<2?'0'+v:v; };
+  return '#'+to(f(0))+to(f(8))+to(f(4));
+}
+function makeCustom(hex, mode){
+  var a = hexToHsl(hex), h=a[0], s=a[1];
+  if(mode === 'light'){
+    return { id:'custom', name:'自由', shade:L,
+      bg:[hslToHex(h,clamp(s*0.35,8,40),96), hslToHex(h,clamp(s*0.45,10,45),86)],
+      panel: hslToHex(h,clamp(s*0.3,6,35),98),
+      frame: hslToHex(h,clamp(s*0.8,18,62),56),
+      frameHi:'#FFFFFF',
+      accent: hslToHex(h,clamp(s,30,82),44),
+      accent2: hslToHex(h,clamp(s*0.55,12,48),80),
+      text: hslToHex(h,clamp(s*0.4,8,32),14),
+      sub: hslToHex(h,clamp(s*0.3,6,26),40) };
+  }
+  return { id:'custom', name:'自由', shade:D,
+    bg:[hslToHex(h,clamp(s*0.6,12,58),8), hslToHex(h,clamp(s*0.6,12,55),19)],
+    panel: hslToHex(h,clamp(s*0.55,10,52),12),
+    frame: hslToHex(h,clamp(s*0.9,22,78),55),
+    frameHi: hslToHex(h,clamp(s*0.7,18,66),80),
+    accent: hslToHex(h,clamp(s,34,92),63),
+    accent2: hslToHex(h,clamp(s*0.75,16,66),33),
+    text: hslToHex(h,clamp(s*0.25,6,24),95),
+    sub: hslToHex(h,clamp(s*0.22,5,22),74) };
+}
+function basePalette(card){
+  if(card.custom && card.custom.on) return makeCustom(card.custom.color, card.custom.mode);
+  for(var i=0;i<THEMES.length;i++) if(THEMES[i].id===card.themeId) return THEMES[i];
+  return THEMES[0];
+}
+function lum(hex){
+  var c = hexToRgb(hex);
+  var f = function(v){ v/=255; return v<=0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4); };
+  return 0.2126*f(c[0]) + 0.7152*f(c[1]) + 0.0722*f(c[2]);
+}
+function contrast(a,b){
+  var la = lum(a), lb = lum(b);
+  return (Math.max(la,lb) + 0.05) / (Math.min(la,lb) + 0.05);
+}
+function shiftL(hex, d){ var a = hexToHsl(hex); return hslToHex(a[0], a[1], a[2] + d); }
+function mixHex(a, b, t){
+  var x = hexToRgb(a), y = hexToRgb(b);
+  var to = function(v){ v = Math.round(v).toString(16); return v.length<2 ? '0'+v : v; };
+  return '#' + to(x[0]+(y[0]-x[0])*t) + to(x[1]+(y[1]-x[1])*t) + to(x[2]+(y[2]-x[2])*t);
+}
+
+/* the nine roles a preset implies, before the card's own overrides */
+function semFromPreset(p){
+  return {
+    base: p.bg[0],
+    ui: p.panel,
+    frame: p.frame,
+    accent: p.accent,
+    character: null,
+    magic: null,
+    textMain: p.text,
+    textSub: p.sub,
+    shadow: p.shade===L ? '#6A6478' : '#000000'
+  };
+}
+/* card.sem holds only the roles the user pinned; card.autoArt holds the
+   Character/Magic colours read out of the artwork. */
+function semOf(card){
+  card = card || S;
+  var d = semFromPreset(basePalette(card)), s = card.sem || {}, a = card.autoArt || {};
+  var out = {};
+  for(var i=0;i<SEM_ROLES.length;i++){
+    var k = SEM_ROLES[i].k;
+    out[k] = s[k] || a[k] || d[k] || null;
+  }
+  return out;
+}
+function semSource(card, k){
+  card = card || S;
+  if(card.sem && card.sem[k]) return 'set';
+  if(card.autoArt && card.autoArt[k]) return 'auto';
+  return 'preset';
+}
+/* the UI family (Base / UI / Frame) answers to the saturation and
+   lightness sliders; Accent, the text roles and the art roles do not. */
+function tuneUI(hex, card){
+  var a = hexToHsl(hex);
+  return hslToHex(a[0], a[1] * ((card.uiSat==null?100:card.uiSat)/100), a[2] + (card.uiLight||0));
+}
+function accentOn(card, key){
+  var amt = card.accentAmount == null ? 55 : card.accentAmount;
+  for(var i=0;i<ACCENT_TARGETS.length;i++)
+    if(ACCENT_TARGETS[i].k === key) return amt >= ACCENT_TARGETS[i].at;
+  return true;
+}
+
+/* the palette the drawing code sees */
+function theme(card){
+  card = card || S;
+  var P0 = basePalette(card), m = semOf(card);
+  var base  = tuneUI(m.base, card);
+  var ui    = tuneUI(m.ui, card);
+  var frame = tuneUI(m.frame, card);
+  var shade = lum(base) > 0.5 ? L : D;
+  var bg2   = shiftL(base, shade===L ? -7 : 8);
+  var accentUsed = accentOn(card, 'frameHi');
+  return {
+    id:P0.id, name:P0.name, shade:shade, foil:P0.foil,
+    bg:[ base, bg2 ],
+    panel: ui,
+    panelA: (card.uiAlpha==null?100:card.uiAlpha)/100,
+    frame: frame,
+    frameHi: accentUsed ? mixHex(frame, m.accent, .55)
+                        : shiftL(frame, shade===L ? -26 : 26),
+    accent: m.accent,
+    accent2: accentOn(card,'stats') ? mixHex(ui, m.accent, .42) : shiftL(ui, shade===L ? -10 : 12),
+    text: m.textMain,
+    sub: m.textSub,
+    shadow: m.shadow || '#000000',
+    character: m.character,
+    magic: m.magic,
+    scrim: card.scrim || DEFAULT_SCRIM,
+    card: card
+  };
+}
+function hiOn(T){
+  var a = accentOn(T.card, 'rarity') ? T.accent : T.frameHi;
+  /* an accent that vanishes into the ground is no accent at all */
+  return contrast(a, T.bg[0]) < 2.2 ? T.frameHi : a;
+}
+function hairOn(T,a){ return T.shade===L ? rgba(T.frame, a*1.2) : rgba(T.frameHi, a); }
+function panelFill(T, extra){ return rgba(T.panel, (extra==null?1:extra) * T.panelA); }
+function shadowRGBA(T, a){ return rgba(T.shadow, a); }
+
+/* ── canvas helpers ───────────────────────────────────── */
+function rr(ctx,x,y,w,h,r){
+  r = Math.min(r, w/2, h/2);
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.lineTo(x+w-r,y); ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r); ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+  ctx.lineTo(x+r,y+h); ctx.arcTo(x,y+h,x,y+h-r,r);
+  ctx.lineTo(x,y+r); ctx.arcTo(x,y,x+r,y,r);
+  ctx.closePath();
+}
+function fdisp(size){ var f=FONTSETS[S.fontSet]||FONTSETS.gothic; return f.dispW+' '+size+'px '+f.disp+FB; }
+function fbody(size,bold){ var f=FONTSETS[S.fontSet]||FONTSETS.gothic; return (bold?f.bodyB:f.bodyW)+' '+size+'px '+f.body+FB; }
+function fmono(size,w){ return (w||500)+' '+size+'px '+MONO; }
+
+function fitFont(ctx,text,maxW,mk,maxS,minS){
+  var s = maxS;
+  while(s > minS){
+    ctx.font = mk(s);
+    if(ctx.measureText(text).width <= maxW) return s;
+    s -= 1;
+  }
+  ctx.font = mk(minS);
+  return minS;
+}
+var CJK = /[　-ヿ㐀-鿿＀-￯]/;
+var NO_START = '。、，．・：；？！ーぁぃぅぇぉっゃゅょゎァィゥェォッャュョヮ）」』】〉》〕］｝’”%℃';
+function tokenize(s){
+  var res=[], buf='', chars=Array.prototype.slice.call(String(s));
+  for(var i=0;i<chars.length;i++){
+    var ch=chars[i];
+    if(CJK.test(ch)){ if(buf){res.push(buf);buf='';} res.push(ch); }
+    else if(ch===' '){ buf+=ch; res.push(buf); buf=''; }
+    else buf+=ch;
+  }
+  if(buf) res.push(buf);
+  return res;
+}
+function wrapText(ctx,text,maxW){
+  var out=[], paras=String(text==null?'':text).split(/\r?\n/);
+  for(var p=0;p<paras.length;p++){
+    if(paras[p]===''){ out.push(''); continue; }
+    var toks=tokenize(paras[p]), line='';
+    for(var i=0;i<toks.length;i++){
+      var t=toks[i], test=line+t;
+      if(line && ctx.measureText(test).width > maxW){ out.push(line); line=t.replace(/^\s+/,''); }
+      else line=test;
+    }
+    out.push(line);
+  }
+  for(var j=1;j<out.length;j++){
+    while(out[j] && NO_START.indexOf(out[j].charAt(0))>=0 && out[j-1]){
+      out[j-1] += out[j].charAt(0);
+      out[j] = out[j].slice(1);
+      if(!out[j]){ out.splice(j,1); j--; break; }
+    }
+  }
+  return out.filter(function(l,i,a){ return !(l==='' && i===a.length-1); });
+}
+function tracked(ctx,text,x,y,tr,align){
+  var chars=Array.prototype.slice.call(String(text)), total=0, i;
+  for(i=0;i<chars.length;i++) total += ctx.measureText(chars[i]).width + tr;
+  total -= tr;
+  var cx = align==='right' ? x-total : (align==='center' ? x-total/2 : x);
+  var prev = ctx.textAlign; ctx.textAlign='left';
+  for(i=0;i<chars.length;i++){ ctx.fillText(chars[i],cx,y); cx += ctx.measureText(chars[i]).width + tr; }
+  ctx.textAlign = prev;
+  return total;
+}
+function ellip(ctx,text,maxW){
+  var t=String(text==null?'':text);
+  if(ctx.measureText(t).width<=maxW) return t;
+  while(t.length>1 && ctx.measureText(t+'…').width>maxW) t=t.slice(0,-1);
+  return t+'…';
+}
+
+/* ── ground ───────────────────────────────────────────── */
+function drawGround(ctx,T,style){
+  ctx.save(); rr(ctx,0,0,W,H,30); ctx.clip();
+  var c1=T.bg[0], c2=T.bg[1], g;
+  if(style==='plain'){
+    ctx.fillStyle=c1; ctx.fillRect(0,0,W,H);
+  } else if(style==='vert'){
+    g=ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,c1); g.addColorStop(1,c2);
+    ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  } else if(style==='radial'){
+    ctx.fillStyle=c1; ctx.fillRect(0,0,W,H);
+    g=ctx.createRadialGradient(W/2,H*0.40,30,W/2,H*0.46,H*0.72);
+    g.addColorStop(0,c2); g.addColorStop(1,rgba(c2,0));
+    ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  } else {
+    g=ctx.createLinearGradient(0,0,W*0.35,H); g.addColorStop(0,c1); g.addColorStop(1,c2);
+    ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  }
+
+  if(style==='rays'){
+    ctx.save(); ctx.translate(W/2,H*0.42);
+    ctx.fillStyle=hairOn(T,.055);
+    for(var r=0;r<28;r+=2){
+      var a0=r/28*Math.PI*2, a1=(r+1)/28*Math.PI*2;
+      ctx.beginPath(); ctx.moveTo(0,0);
+      ctx.arc(0,0,1400,a0,a1); ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+  } else if(style==='hatch'){
+    ctx.strokeStyle=hairOn(T,.10); ctx.lineWidth=3;
+    for(var x=-H;x<W+H;x+=22){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x+H,H); ctx.stroke(); }
+  } else if(style==='dots'){
+    ctx.fillStyle=hairOn(T,.13);
+    for(var dy=14;dy<H;dy+=26)
+      for(var dx=(Math.round(dy/26)%2?26:13);dx<W;dx+=26){
+        ctx.beginPath(); ctx.arc(dx,dy,2.6,0,Math.PI*2); ctx.fill();
+      }
+  } else if(style==='checker'){
+    ctx.fillStyle=hairOn(T,.075);
+    var cs=42;
+    for(var cy=0;cy<H;cy+=cs)
+      for(var cx=0;cx<W;cx+=cs)
+        if(((cx/cs)+(cy/cs))%2===0) ctx.fillRect(cx,cy,cs,cs);
+  } else if(style==='seigaiha'){
+    ctx.strokeStyle=hairOn(T,.16); ctx.lineWidth=2;
+    var R=48, stepX=R, stepY=R*0.62;
+    for(var sy=0; sy<H+R; sy+=stepY){
+      var off = (Math.round(sy/stepY)%2) ? stepX/2 : 0;
+      for(var sx=-R; sx<W+R; sx+=stepX){
+        for(var k=1;k<=3;k++){
+          ctx.beginPath();
+          ctx.arc(sx+off, sy, R*k/3.2, Math.PI, 0);
+          ctx.stroke();
+        }
+      }
+    }
+  }
+  ctx.restore();
+}
+
+/* ── art ──────────────────────────────────────────────── */
+function drawArt(ctx,x,y,w,h,r,T){
+  var im = S._img;
+  ctx.save(); rr(ctx,x,y,w,h,r); ctx.clip();
+  if(im && im.complete && im.naturalWidth){
+    var base = Math.max(w/im.naturalWidth, h/im.naturalHeight);
+    var sc = base * (S.img.zoom||1);
+    var dw = im.naturalWidth*sc, dh = im.naturalHeight*sc;
+    var cx = x + w/2 + (S.img.ox||0)*w, cy = y + h/2 + (S.img.oy||0)*h;
+    ctx.drawImage(im, cx-dw/2, cy-dh/2, dw, dh);
+  } else {
+    var g = ctx.createLinearGradient(x,y,x,y+h);
+    g.addColorStop(0, T.shade===L ? rgba(T.frame,.14) : rgba(T.accent2,.42));
+    g.addColorStop(1, T.shade===L ? rgba(T.frame,.26) : rgba(T.panel,.82));
+    ctx.fillStyle=g; ctx.fillRect(x,y,w,h);
+    silhouette(ctx,x,y,w,h,T);
+  }
+  ctx.restore();
+  lastArtAny = {x:x,y:y,w:w,h:h};
+  if(trackArt) lastArt = {x:x,y:y,w:w,h:h};
+}
+function silhouette(ctx,x,y,w,h,T){
+  var cx = x+w/2, base = y+h*0.98, u = Math.min(w,h)*0.30;
+  ctx.save();
+  ctx.fillStyle = T.shade===L ? rgba(T.text,.13) : rgba(T.frameHi,.13);
+  ctx.beginPath();
+  ctx.moveTo(cx-u*1.55, base);
+  ctx.quadraticCurveTo(cx-u*1.35, base-u*1.35, cx, base-u*1.42);
+  ctx.quadraticCurveTo(cx+u*1.35, base-u*1.35, cx+u*1.55, base);
+  ctx.closePath(); ctx.fill();
+  var hy = base-u*1.95;
+  ctx.beginPath(); ctx.arc(cx, hy, u*0.72, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(cx-u*0.60, hy-u*0.42); ctx.quadraticCurveTo(cx-u*1.20, hy-u*1.30, cx-u*0.86, hy-u*1.62);
+  ctx.quadraticCurveTo(cx-u*0.82, hy-u*0.95, cx-u*0.28, hy-u*0.62); ctx.closePath(); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(cx+u*0.60, hy-u*0.42); ctx.quadraticCurveTo(cx+u*1.20, hy-u*1.30, cx+u*0.86, hy-u*1.62);
+  ctx.quadraticCurveTo(cx+u*0.82, hy-u*0.95, cx+u*0.28, hy-u*0.62); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
+/* ── surface treatments ───────────────────────────────── */
+var DEFAULT_FOIL = ['#8FE9E2','#9DBBFF','#DCA6F2','#FFCE96','#8FE9E2'];
+function foilGradient(ctx,T,x,y,w,h){
+  var stops = T.foil || DEFAULT_FOIL;
+  var g = ctx.createLinearGradient(x,y+h,x+w,y);
+  for(var i=0;i<stops.length;i++) g.addColorStop(i/(stops.length-1), stops[i]);
+  return g;
+}
+function holoWash(ctx,T,x,y,w,h,r,alpha){
+  var stops = T.foil || DEFAULT_FOIL;
+  ctx.save(); rr(ctx,x,y,w,h,r); ctx.clip();
+  var g = ctx.createLinearGradient(x,y+h,x+w,y);
+  for(var i=0;i<stops.length;i++){
+    var c = hexToRgb(stops[i]);
+    g.addColorStop(i/(stops.length-1), 'rgba('+c[0]+','+c[1]+','+c[2]+','+alpha+')');
+  }
+  ctx.globalCompositeOperation='overlay';
+  ctx.fillStyle=g; ctx.fillRect(x,y,w,h);
+  ctx.globalCompositeOperation='screen';
+  var b = ctx.createLinearGradient(x,y+h,x+w*0.75,y);
+  b.addColorStop(0,'rgba(255,255,255,0)');
+  b.addColorStop(0.46,'rgba(255,255,255,'+(alpha*0.55)+')');
+  b.addColorStop(0.54,'rgba(255,255,255,0)');
+  ctx.fillStyle=b; ctx.fillRect(x,y,w,h);
+  ctx.restore();
+}
+function streakWash(ctx,T,x,y,w,h,r,alpha){
+  ctx.save(); rr(ctx,x,y,w,h,r); ctx.clip();
+  ctx.globalCompositeOperation = T.shade===L ? 'multiply' : 'screen';
+  ctx.strokeStyle = T.shade===L ? rgba(T.frame, alpha*0.5) : rgba(T.frameHi, alpha*0.55);
+  for(var i=-h;i<w+h;i+=17){
+    ctx.lineWidth = (i%51===0) ? 5 : (i%34===0 ? 2.2 : 1);
+    ctx.beginPath(); ctx.moveTo(x+i, y+h); ctx.lineTo(x+i+h*0.62, y); ctx.stroke();
+  }
+  ctx.restore();
+}
+var grainPat = null;
+function grainWash(ctx,x,y,w,h,r,alpha){
+  if(!grainPat){
+    var n = document.createElement('canvas'); n.width=n.height=140;
+    var ng = n.getContext('2d'), id = ng.createImageData(140,140), dd = id.data;
+    for(var i=0;i<dd.length;i+=4){
+      var v = 120 + Math.random()*135;
+      dd[i]=dd[i+1]=dd[i+2]=v; dd[i+3]=255;
+    }
+    ng.putImageData(id,0,0);
+    grainPat = n;
+  }
+  ctx.save(); rr(ctx,x,y,w,h,r); ctx.clip();
+  ctx.globalCompositeOperation='overlay';
+  ctx.globalAlpha = alpha;
+  var pat = ctx.createPattern(grainPat,'repeat');
+  ctx.fillStyle = pat; ctx.fillRect(x,y,w,h);
+  ctx.restore();
+}
+function applyTexture(ctx,T,inset,radius){
+  if(S.texture==='none' || !S.texture) return;
+  var a = clamp((Number(S.texAmt)||45)/100, 0.1, 1);
+  var x=inset, y=inset, w=W-inset*2, h=H-inset*2;
+  if(S.texture==='holo')        holoWash(ctx,T,x,y,w,h,radius, a*0.38);
+  else if(S.texture==='streak') streakWash(ctx,T,x,y,w,h,radius, a*0.5);
+  else if(S.texture==='grain')  grainWash(ctx,x,y,w,h,radius, a*0.35);
+}
+
+/* the gradient that carries the description at the foot of a profile card */
+function scrimGradient(ctx, T, y0){
+  var sc = T.scrim || DEFAULT_SCRIM;
+  var g = ctx.createLinearGradient(0, y0, 0, H);
+  var maxA = clamp((sc.strength==null?88:sc.strength)/100 * ((sc.alpha==null?100:sc.alpha)/100), 0, 1);
+  var gamma = 3.2 - clamp(sc.soft==null?50:sc.soft, 0, 100)/100 * 2.6;
+  for(var i=0;i<=10;i++){
+    var t = i/10;
+    g.addColorStop(t, rgba(T.bg[0], maxA * Math.pow(t, gamma)));
+  }
+  return g;
+}
+function scrimTopY(T){
+  var sc = T.scrim || DEFAULT_SCRIM;
+  return clamp(H * (sc.pos==null?45:sc.pos)/100, H*0.05, H*0.90);
+}
+
+/* ── frame ────────────────────────────────────────────── */
+function strokeFrame(ctx,T,x,y,w,h,r,lw){
+  ctx.strokeStyle = T.foil ? foilGradient(ctx,T,x,y,w,h) : T.frame;
+  ctx.lineWidth = lw; rr(ctx,x,y,w,h,r); ctx.stroke();
+}
+function drawFrameStyle(ctx,T,inset,radius){
+  var st = S.frameStyle || 'standard';
+  if(st==='none') return;
+  var x=inset, y=inset, w=W-inset*2, h=H-inset*2;
+  if(st==='double'){
+    strokeFrame(ctx,T,x,y,w,h,radius,2.5);
+    strokeFrame(ctx,T,x+11,y+11,w-22,h-22,Math.max(4,radius-8),1.5);
+    return;
+  }
+  var lw = st==='thin' ? 1.5 : (st==='bold' ? 6.5 : 3);
+  strokeFrame(ctx,T,x,y,w,h,radius,lw);
+  if(st==='standard' || st==='bold'){
+    ctx.strokeStyle=hairOn(T,.34); ctx.lineWidth=1;
+    rr(ctx,x+8,y+8,w-16,h-16,Math.max(4,radius-6)); ctx.stroke();
+  }
+  if(st==='ornate'){
+    ctx.strokeStyle=hairOn(T,.5); ctx.lineWidth=1.2;
+    rr(ctx,x+9,y+9,w-18,h-18,Math.max(4,radius-7)); ctx.stroke();
+    ctx.strokeStyle = T.foil ? foilGradient(ctx,T,x,y,w,h)
+                             : (accentOn(S,'corner') ? T.accent : T.frame);
+    ctx.fillStyle   = ctx.strokeStyle;
+    ctx.lineWidth = 2.4;
+    var t=26, o=x+15, oy=y+15, rx=x+w-15, ry=y+h-15;
+    [[o,oy,1,1],[rx,oy,-1,1],[o,ry,1,-1],[rx,ry,-1,-1]].forEach(function(c){
+      ctx.beginPath();
+      ctx.moveTo(c[0]+t*c[2], c[1]); ctx.lineTo(c[0], c[1]); ctx.lineTo(c[0], c[1]+t*c[3]);
+      ctx.stroke();
+      /* a stud sitting on the elbow, so it never reaches into the card's content */
+      ctx.beginPath();
+      ctx.moveTo(c[0], c[1]-6);
+      ctx.lineTo(c[0]+6, c[1]);
+      ctx.lineTo(c[0], c[1]+6);
+      ctx.lineTo(c[0]-6, c[1]);
+      ctx.closePath(); ctx.fill();
+    });
+  }
+}
+
+/* ── layout: battle ───────────────────────────────────── */
+function drawBattle(ctx,T){
+  var innerW = W - PAD*2;
+  var st = S.show.stats ? S.stats.filter(function(s){ return s.k || s.v; }) : [];
+  var headStat = st.length ? st[0] : null;
+  var grid = st.slice(1);
+  var sk = S.show.skills ? S.skills.filter(function(s){ return (s.n||'').trim() || (s.t||'').trim(); }) : [];
+  var descOn = S.show.desc && (S.desc||'').trim();
+  var stripOn = (S.show.subtitle && (S.subtitle||'').trim()) || (S.show.rarity && (S.rarity||'').trim());
+
+  var descMax = 4, skillMax = 3, plan = null;
+  for(var pass=0; pass<10; pass++){
+    plan = measureBody(ctx, grid, sk, descOn, stripOn, innerW, descMax, skillMax);
+    var probe = BODY_BOTTOM - plan.h - ART_Y - (plan.h ? 18 : 0);
+    if(probe >= 260 || (descMax<=1 && skillMax<=1)) break;
+    if(descMax > 1) descMax--; else if(skillMax > 1) skillMax--;
+  }
+  var artH = clamp(BODY_BOTTOM - plan.h - ART_Y - (plan.h ? 18 : 0), 200, 512);
+
+  drawGround(ctx,T,S.bgStyle);
+  var v = ctx.createRadialGradient(W/2,H*0.34,80,W/2,H*0.5,H*0.78);
+  v.addColorStop(0,'rgba(0,0,0,0)');
+  v.addColorStop(1, T.shade===L ? 'rgba(90,80,110,.16)' : 'rgba(0,0,0,.42)');
+  ctx.save(); rr(ctx,0,0,W,H,30); ctx.clip(); ctx.fillStyle=v; ctx.fillRect(0,0,W,H); ctx.restore();
+
+  drawFrameStyle(ctx,T,FRAME,22);
+
+  /* header */
+  var nameRight = headStat ? W-PAD-152 : W-PAD;
+  if(S.show.name && (S.name||'').trim()){
+    ctx.fillStyle=T.text; ctx.textBaseline='middle'; ctx.textAlign='left';
+    fitFont(ctx,S.name,nameRight-PAD, function(s){return fdisp(s);}, 47, 21);
+    ctx.fillText(ellip(ctx,S.name,nameRight-PAD), PAD, HEAD_Y+HEAD_H/2+1);
+  }
+  if(headStat){
+    ctx.textAlign='right'; ctx.textBaseline='alphabetic';
+    ctx.fillStyle=T.sub; ctx.font=fmono(15,500);
+    tracked(ctx, String(headStat.k||'').toUpperCase(), W-PAD, HEAD_Y+26, 2.2, 'right');
+    ctx.fillStyle=T.text; ctx.font=fmono(42,700);
+    ctx.fillText(String(headStat.v==null?'':headStat.v), W-PAD, HEAD_Y+HEAD_H+2);
+  }
+  ctx.strokeStyle=rgba(T.frame,.55); ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(PAD,HEAD_Y+HEAD_H+14); ctx.lineTo(W-PAD,HEAD_Y+HEAD_H+14); ctx.stroke();
+
+  /* art */
+  ctx.save();
+  ctx.shadowColor = shadowRGBA(T, T.shade===L ? .30 : .58);
+  ctx.shadowBlur = 22; ctx.shadowOffsetY = 6;
+  ctx.fillStyle = T.panel; rr(ctx,PAD,ART_Y,innerW,artH,10); ctx.fill();
+  ctx.restore();
+  drawArt(ctx,PAD,ART_Y,innerW,artH,10,T);
+  strokeFrame(ctx,T,PAD,ART_Y,innerW,artH,10,3);
+
+  /* body */
+  var y = ART_Y + artH + 18;
+
+  if(stripOn){
+    ctx.fillStyle = accentOn(S,'strip')
+      ? rgba(mixHex(T.panel, T.accent, .34), (T.shade===L?.62:.92) * T.panelA)
+      : rgba(T.accent2, (T.shade===L?.5:.85) * T.panelA);
+    rr(ctx,PAD,y,innerW,44,6); ctx.fill();
+    ctx.fillStyle = rgba(accentOn(S,'strip') ? T.accent : T.frame, .92);
+    ctx.fillRect(PAD,y,5,44);
+    ctx.textBaseline='middle'; ctx.textAlign='left';
+    var rw = 0;
+    if(S.show.rarity && (S.rarity||'').trim()){
+      ctx.font=fmono(20,700); ctx.fillStyle=hiOn(T);
+      rw = tracked(ctx, S.rarity, W-PAD-14, y+23, 1.6, 'right') + 20;
+    }
+    if(S.show.subtitle && (S.subtitle||'').trim()){
+      ctx.font=fbody(21,true); ctx.fillStyle=T.text;
+      ctx.fillText(ellip(ctx,S.subtitle,innerW-34-rw), PAD+18, y+23);
+    }
+    y += 44 + 14;
+  }
+
+  if(grid.length){
+    var cols = 2, cw = (innerW-12)/cols, ch = 46;
+    for(var i=0;i<grid.length;i++){
+      var cx = PAD + (i%cols)*(cw+12), cy = y + Math.floor(i/cols)*(ch+9);
+      ctx.fillStyle = panelFill(T, T.shade===L?.85:.9);
+      rr(ctx,cx,cy,cw,ch,6); ctx.fill();
+      var ratio = clamp((Number(grid[i].v)||0) / (Number(S.statMax)||100), 0, 1);
+      if(ratio>0){
+        ctx.save(); rr(ctx,cx,cy,cw,ch,6); ctx.clip();
+        var barEnd = accentOn(S,'stats') ? T.accent : shiftL(T.frame, T.shade===L?-6:10);
+        var bg2=ctx.createLinearGradient(cx,cy,cx+cw*ratio,cy);
+        bg2.addColorStop(0, rgba(T.accent2,.88)); bg2.addColorStop(1, rgba(barEnd,.58));
+        ctx.fillStyle=bg2; ctx.fillRect(cx,cy,cw*ratio,ch); ctx.restore();
+      }
+      ctx.strokeStyle=rgba(T.frame,.4); ctx.lineWidth=1; rr(ctx,cx,cy,cw,ch,6); ctx.stroke();
+      ctx.textBaseline='middle'; ctx.textAlign='left';
+      ctx.font=fmono(15,500); ctx.fillStyle=T.sub;
+      tracked(ctx, String(grid[i].k||'').toUpperCase(), cx+13, cy+ch/2+1, 2, 'left');
+      ctx.font=fmono(25,700); ctx.fillStyle=T.text; ctx.textAlign='right';
+      ctx.fillText(String(grid[i].v==null?'':grid[i].v), cx+cw-13, cy+ch/2+1);
+    }
+    y += Math.ceil(grid.length/2)*(46+9) - 9 + 16;
+  }
+
+  if(sk.length){
+    ctx.textAlign='left';
+    for(var s2=0;s2<sk.length;s2++){
+      var nm = (sk[s2].n||'').trim();
+      if(nm){
+        ctx.fillStyle=rgba(accentOn(S,'skill') ? T.accent : T.frame, .95);
+        rr(ctx,PAD,y+4,5,22,2.5); ctx.fill();
+        ctx.textBaseline='top'; ctx.font=fbody(24,true); ctx.fillStyle=T.text;
+        ctx.fillText(ellip(ctx,nm,innerW-22), PAD+16, y);
+        y += 33;
+      }
+      var tx=(sk[s2].t||'').trim();
+      if(tx){
+        ctx.font=fbody(19,false); ctx.fillStyle=T.sub; ctx.textBaseline='top';
+        var lines=wrapText(ctx,tx,innerW-16).slice(0,skillMax);
+        for(var l=0;l<lines.length;l++){ ctx.fillText(lines[l], PAD+16, y); y+=27; }
+      }
+      y += 12;
+      if(s2<sk.length-1){
+        ctx.strokeStyle=rgba(accentOn(S,'divider') ? T.accent : T.frame, .3); ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(PAD+4,y-6); ctx.lineTo(W-PAD-4,y-6); ctx.stroke();
+        y += 8;
+      }
+    }
+    y += 6;
+  }
+
+  if(descOn){
+    ctx.font=fbody(19,false);
+    var dl = wrapText(ctx,S.desc,innerW-40).slice(0,descMax);
+    var dh = dl.length*27 + 26;
+    ctx.fillStyle = panelFill(T, T.shade===L?.8:.65);
+    rr(ctx,PAD,y,innerW,dh,6); ctx.fill();
+    ctx.fillStyle = rgba(accentOn(S,'divider') ? T.accent : T.frame, .55);
+    ctx.fillRect(PAD,y+8,3,dh-16);
+    ctx.fillStyle=T.sub; ctx.textBaseline='top'; ctx.textAlign='left';
+    for(var d=0;d<dl.length;d++) ctx.fillText(dl[d], PAD+20, y+14+d*27);
+    y += dh;
+  }
+
+  /* footer */
+  ctx.strokeStyle=rgba(accentOn(S,'footer') ? T.accent : T.frame, .45); ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(PAD,H-72); ctx.lineTo(W-PAD,H-72); ctx.stroke();
+  if(S.show.number){
+    ctx.textBaseline='middle';
+    if((S.number||'').trim()){
+      ctx.font=fmono(15,500); ctx.textAlign='left';
+      ctx.fillStyle = accentOn(S,'footer') ? T.accent : T.sub;
+      tracked(ctx,S.number,PAD,H-49,2,'left');
+    }
+    if((S.author||'').trim()){
+      ctx.font=fmono(14,400); ctx.fillStyle=rgba(T.sub,.85); ctx.textAlign='right';
+      tracked(ctx,S.author,W-PAD,H-49,1.2,'right');
+    }
+  }
+  applyTexture(ctx,T,FRAME,22);
+}
+
+function measureBody(ctx,grid,sk,descOn,stripOn,innerW,descMax,skillMax){
+  var h = 0;
+  if(stripOn) h += 44 + 14;
+  if(grid.length) h += Math.ceil(grid.length/2)*(46+9) - 9 + 16;
+  if(sk.length){
+    for(var i=0;i<sk.length;i++){
+      if((sk[i].n||'').trim()) h += 33;
+      var tx=(sk[i].t||'').trim();
+      if(tx){ ctx.font=fbody(19,false); h += Math.min(wrapText(ctx,tx,innerW-16).length,skillMax)*27; }
+      h += 12; if(i<sk.length-1) h += 8;
+    }
+    h += 6;
+  }
+  if(descOn){
+    ctx.font=fbody(19,false);
+    h += Math.min(wrapText(ctx,S.desc,innerW-40).length,descMax)*27 + 26;
+  }
+  return { h:h };
+}
+
+/* ── layout: profile ──────────────────────────────────── */
+function drawProfile(ctx,T){
+  var padX = 54, innerW = W - padX*2;
+  var light = T.shade===L;
+
+  drawGround(ctx,T,S.bgStyle);
+  drawArt(ctx,0,0,W,H,30,T);
+
+  var blocks=[], nameSize=0;
+  var eyebrowOn = S.show.subtitle && (S.subtitle||'').trim();
+  var nameOn = S.show.name && (S.name||'').trim();
+  var descOn = S.show.desc && (S.desc||'').trim();
+  var st = S.show.stats ? S.stats.filter(function(s){ return s.k || s.v; }) : [];
+  var sk = S.show.skills ? S.skills.filter(function(s){ return (s.n||'').trim() || (s.t||'').trim(); }) : [];
+
+  if(eyebrowOn) blocks.push({t:'eyebrow', h:26, gap:12});
+  if(nameOn){
+    nameSize = fitFont(ctx,S.name,innerW,function(s){return fdisp(s);},68,34);
+    var nameLines;
+    if(ctx.measureText(S.name).width <= innerW){ nameLines = [S.name]; }
+    else {
+      var nz = 46;
+      while(nz > 26){ ctx.font = fdisp(nz); if(wrapText(ctx,S.name,innerW).length <= 2) break; nz -= 2; }
+      nameSize = nz; ctx.font = fdisp(nameSize);
+      var wl = wrapText(ctx,S.name,innerW);
+      nameLines = wl.slice(0,2);
+      if(wl.length > 2) nameLines[1] = ellip(ctx, wl.slice(1).join(''), innerW);
+    }
+    blocks.push({t:'name', h:nameSize*1.06 + (nameLines.length-1)*nameSize*1.22, lines:nameLines, gap:descOn?16:14});
+  }
+  if(descOn){
+    ctx.font=fbody(20,false);
+    var dl = wrapText(ctx,S.desc,innerW).slice(0,4);
+    blocks.push({t:'desc', h:dl.length*30, lines:dl, gap:(sk.length||st.length)?20:0});
+  }
+  if(sk.length){
+    var skl=[];
+    for(var i=0;i<sk.length;i++){
+      ctx.font=fbody(18,true);
+      var nw = (sk[i].n||'').trim() ? ctx.measureText('【'+sk[i].n+'】').width + 10 : 0;
+      ctx.font=fbody(18,false);
+      skl.push({ n:(sk[i].n||'').trim(), nw:nw, t:ellip(ctx,(sk[i].t||'').trim(), innerW-nw) });
+    }
+    blocks.push({t:'skills', h:skl.length*28, rows:skl, gap:st.length?20:0});
+  }
+  if(st.length){
+    var rows = st.length>4 ? 2 : 1, per = Math.ceil(st.length/rows);
+    blocks.push({t:'stats', h:rows*54+13, rows:rows, per:per, list:st, gap:0});
+  }
+
+  var total=0;
+  for(var b=0;b<blocks.length;b++) total += blocks[b].h + blocks[b].gap;
+  var bottom = (S.show.number && ((S.number||'').trim() || (S.author||'').trim())) ? H-84 : H-58;
+  var top = bottom - total;
+
+  var scrimTop = scrimTopY(T);
+  var sg = scrimGradient(ctx, T, scrimTop);
+  ctx.save(); rr(ctx,0,0,W,H,30); ctx.clip(); ctx.fillStyle=sg; ctx.fillRect(0,scrimTop,W,H-scrimTop);
+  var tg = ctx.createLinearGradient(0,0,0,190);
+  tg.addColorStop(0, rgba(T.bg[0], light?.55:.62)); tg.addColorStop(1, rgba(T.bg[0],0));
+  ctx.fillStyle=tg; ctx.fillRect(0,0,W,190); ctx.restore();
+
+  drawFrameStyle(ctx,T,16,20);
+  if((S.frameStyle||'standard') !== 'none' && (S.frameStyle||'standard') !== 'ornate'){
+    ctx.strokeStyle=rgba(accentOn(S,'corner') ? T.accent : hiOn(T), .9); ctx.lineWidth=2.5;
+    var tk=26, o=38;
+    [[o,o,1,1],[W-o,o,-1,1],[o,H-o,1,-1],[W-o,H-o,-1,-1]].forEach(function(c){
+      ctx.beginPath(); ctx.moveTo(c[0]+tk*c[2],c[1]); ctx.lineTo(c[0],c[1]); ctx.lineTo(c[0],c[1]+tk*c[3]); ctx.stroke();
+    });
+  }
+
+  if(S.show.rarity && (S.rarity||'').trim()){
+    ctx.font=fmono(19,700);
+    var chars=Array.prototype.slice.call(S.rarity), tw=0;
+    for(var q=0;q<chars.length;q++) tw += ctx.measureText(chars[q]).width + 2.4;
+    tw -= 2.4;
+    var bw = tw+34, bx = W-54-bw, by = 52;
+    ctx.fillStyle = rgba(T.bg[0], light?.55:.7);
+    rr(ctx,bx,by,bw,40,20); ctx.fill();
+    ctx.strokeStyle=rgba(T.frame,.95); ctx.lineWidth=1.5; rr(ctx,bx,by,bw,40,20); ctx.stroke();
+    ctx.fillStyle=hiOn(T); ctx.textBaseline='middle';
+    tracked(ctx,S.rarity,bx+bw/2,by+21,2.4,'center');
+  }
+
+  var y = top;
+  ctx.textAlign='left';
+  ctx.save();
+  ctx.shadowColor = light ? 'rgba(255,255,255,.85)' : 'rgba(0,0,0,.68)';
+  ctx.shadowBlur = 11;
+  for(var k=0;k<blocks.length;k++){
+    var bl = blocks[k];
+    if(bl.t==='eyebrow'){
+      ctx.strokeStyle=rgba(T.frame,.95); ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(padX,y+13); ctx.lineTo(padX+26,y+13); ctx.stroke();
+      ctx.font=fmono(16,500); ctx.fillStyle=hiOn(T); ctx.textBaseline='middle';
+      tracked(ctx, ellip(ctx,S.subtitle,innerW-42), padX+38, y+14, 2.6, 'left');
+    }
+    else if(bl.t==='name'){
+      ctx.font=fdisp(nameSize); ctx.fillStyle=T.text; ctx.textBaseline='top';
+      ctx.save(); ctx.shadowBlur = 16;
+      for(var nl=0; nl<bl.lines.length; nl++)
+        ctx.fillText(bl.lines[nl], padX, y - nameSize*0.06 + nl*nameSize*1.22);
+      ctx.restore();
+    }
+    else if(bl.t==='desc'){
+      ctx.font=fbody(20,false); ctx.fillStyle=T.sub; ctx.textBaseline='top';
+      for(var d=0;d<bl.lines.length;d++) ctx.fillText(bl.lines[d], padX, y+d*30);
+    }
+    else if(bl.t==='skills'){
+      for(var r2=0;r2<bl.rows.length;r2++){
+        var row=bl.rows[r2], rx=padX;
+        ctx.textBaseline='top';
+        if(row.n){ ctx.font=fbody(18,true); ctx.fillStyle=hiOn(T); ctx.fillText('【'+row.n+'】',rx,y+r2*28); rx += row.nw; }
+        if(row.t){ ctx.font=fbody(18,false); ctx.fillStyle=T.sub; ctx.fillText(row.t,rx,y+r2*28); }
+      }
+    }
+    else if(bl.t==='stats'){
+      ctx.strokeStyle=rgba(T.frame,.45); ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(padX,y); ctx.lineTo(W-padX,y); ctx.stroke();
+      var cw2 = innerW/bl.per;
+      for(var s3=0;s3<bl.list.length;s3++){
+        var ri=Math.floor(s3/bl.per), ci=s3%bl.per;
+        var sx = padX + ci*cw2, sy = y+13 + ri*54;
+        ctx.textAlign='left'; ctx.textBaseline='top';
+        ctx.font=fmono(13,500); ctx.fillStyle=T.sub;
+        tracked(ctx, String(bl.list[s3].k||'').toUpperCase(), sx, sy, 2, 'left');
+        ctx.font=fmono(29,700); ctx.fillStyle=T.text;
+        ctx.fillText(String(bl.list[s3].v==null?'':bl.list[s3].v), sx, sy+19);
+        if(ci>0){
+          ctx.strokeStyle=rgba(T.frame,.3); ctx.lineWidth=1;
+          ctx.beginPath(); ctx.moveTo(sx-14,sy+2); ctx.lineTo(sx-14,sy+44); ctx.stroke();
+        }
+      }
+      ctx.textAlign='left';
+    }
+    y += bl.h + bl.gap;
+  }
+  ctx.restore();
+
+  if(S.show.number){
+    ctx.textBaseline='middle';
+    if((S.number||'').trim()){
+      ctx.font=fmono(15,500); ctx.textAlign='left';
+      ctx.fillStyle = accentOn(S,'footer') ? rgba(T.accent,.95) : rgba(T.sub,.95);
+      tracked(ctx,S.number,padX,H-52,2,'left');
+    }
+    if((S.author||'').trim()){
+      ctx.font=fmono(14,400); ctx.fillStyle=rgba(T.sub,.8); ctx.textAlign='right';
+      tracked(ctx,S.author,W-padX,H-52,1.2,'right');
+    }
+  }
+  applyTexture(ctx,T,16,20);
+}
+
+/* ── draw ─────────────────────────────────────────────── */
+function drawCard(ctx){
+  var T = theme(S);
+  ctx.save();
+  ctx.clearRect(0,0,W,H);
+  ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+  if(S.layout==='profile') drawProfile(ctx,T); else drawBattle(ctx,T);
+  ctx.restore();
+}
+
+var canvas = document.getElementById('card');
+var cctx = canvas.getContext('2d');
+var pending = false;
+function draw(){
+  if(pending) return;
+  pending = true;
+  requestAnimationFrame(function(){
+    pending=false;
+    trackArt = true;
+    drawCard(cctx);
+    placeHint();
+    drawBefore();
+    scheduleDeck();
+  });
+}
+function placeHint(){
+  var el = document.getElementById('dropHint');
+  if(!el) return;
+  el.hidden = !!(S._img && S._img.complete && S._img.naturalWidth);
+  if(!lastArt) return;
+  el.style.left   = (lastArt.x / W * 100) + '%';
+  el.style.top    = (lastArt.y / H * 100) + '%';
+  el.style.width  = (lastArt.w / W * 100) + '%';
+  el.style.height = (lastArt.h / H * 100) + '%';
+}
+
+/* ── fonts ────────────────────────────────────────────── */
+var SPECS = ['900 40px "Zen Kaku Gothic New"','700 20px "Zen Kaku Gothic New"','500 20px "Zen Kaku Gothic New"',
+             '800 40px "Shippori Mincho"','700 20px "Shippori Mincho"','500 20px "Shippori Mincho"',
+             '400 40px "Dela Gothic One"','700 20px "M PLUS 1 Code"','500 20px "M PLUS 1 Code"','400 20px "M PLUS 1 Code"'];
+if(document.fonts && document.fonts.load){
+  Promise.all(SPECS.map(function(f){ return document.fonts.load(f,'あアA0安霜牙一閃'); }))
+    .catch(function(){})
+    .then(function(){ draw(); renderDeck(); });
+}
+
+/* ── downloads capability ─────────────────────────────── */
+var dlCap = null, dlResolved = false;
+var dlPromise = (function(){
+  try{
+    if(window.claude && typeof window.claude.use === 'function'){
+      return window.claude.use('downloads').then(
+        function(d){ dlCap=d; dlResolved=true; return d; },
+        function(){ dlResolved=true; return null; });
+    }
+  }catch(e){}
+  dlResolved = true;
+  return Promise.resolve(null);
+})();
+
+var DL_MSG = {
+  declined:'保存はキャンセルされました', rate_limited:'少し待ってからもう一度お試しください',
+  too_large:'ファイルが大きすぎます。倍率か画像設定を下げてください', bad_request:'保存できない形式でした',
+  rejected_extension:'この形式は保存できません', extension_not_enabled:'この形式は保存できません'
+};
+function saveBlob(blob, filename, quiet){
+  return dlPromise.then(function(d){
+    if(d){
+      return d.save({ filename:filename, data:blob }).then(
+        function(){ if(!quiet) toast('保存しました'); return true; },
+        function(err){ toast(DL_MSG[err && err.code] || '保存できませんでした'); return false; });
+    }
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+    if(!quiet) toast('保存しました');
+    return true;
+  });
+}
+
+/* ── export ───────────────────────────────────────────── */
+function renderToBlob(card, scale){
+  return new Promise(function(res){
+    var prev = S; S = card;
+    var c = document.createElement('canvas');
+    c.width = W*scale; c.height = H*scale;
+    var g = c.getContext('2d');
+    g.scale(scale,scale);
+    trackArt = false;
+    try { drawCard(g); } finally { trackArt = true; S = prev; }
+    c.toBlob(function(b){ res(b); }, 'image/png');
+  });
+}
+/* Browsers quietly drop a download name that isn't ASCII, leaving a file called
+   "download" with no extension. So a Japanese card name falls back to a numbered
+   ASCII name unless the user typed a file name of their own. */
+function sanitizeName(s){
+  return String(s==null?'':s).trim().replace(/[\\/:*?"<>|\u0000-\u001F]/g,'_').replace(/\s+/g,'_').slice(0,60);
+}
+function asciiSafe(s){ return !!s && /^[\u0020-\u007E]+$/.test(s); }
+function projSlug(){
+  var n = sanitizeName(P.name);
+  return asciiSafe(n) ? n : 'cards';
+}
+function cardFilename(card, i){
+  var f = sanitizeName(card.filename);
+  if(f) return f.replace(/\.png$/i,'') + '.png';
+  var n = sanitizeName(card.name);
+  if(asciiSafe(n)) return n + '.png';
+  var idx = (i==null ? P.cards.indexOf(card) : i);
+  if(idx < 0) idx = 0;
+  return projSlug() + '_' + ('0'+(idx+1)).slice(-2) + '.png';
+}
+function projFilename(){
+  var n = sanitizeName(P.name);
+  return (asciiSafe(n) ? n : 'efuda_project') + '.efuda.json';
+}
+function refreshNameHints(){
+  var fn = document.getElementById('fFilename');
+  if(fn) fn.placeholder = cardFilename(S).replace(/\.png$/,'');
+  var ph = document.getElementById('projHint');
+  if(ph) ph.textContent = '保存したファイルを読み込むと、カード・配色・画像がまとめて戻ります。'
+    + '保存名は「' + projFilename() + '」、書き出しは「' + cardFilename(S) + '」になります。'
+    + '日本語のファイル名はブラウザに無視されるため、英数字で自動的に付けています（「ファイル名」欄で好きな名前にできます）。';
+}
+var btnExport = document.getElementById('btnExport');
+btnExport.addEventListener('click', function(){
+  var scale = Number(document.getElementById('exportScale').value) || 2;
+  btnExport.disabled = true;
+  renderToBlob(S, scale).then(function(blob){
+    btnExport.disabled = false;
+    if(!blob){ toast('書き出しに失敗しました'); return; }
+    saveBlob(blob, cardFilename(S));
+  });
+});
+
+function loadJSZip(){
+  if(window.JSZip) return Promise.resolve(window.JSZip);
+  return new Promise(function(res){
+    var s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+    s.onload=function(){ res(window.JSZip||null); };
+    s.onerror=function(){ res(null); };
+    document.head.appendChild(s);
+  });
+}
+var btnBatch = document.getElementById('btnBatch');
+btnBatch.addEventListener('click', function(){
+  var scale = Number(document.getElementById('exportScale').value) || 2;
+  var cards = P.cards.slice();
+  btnBatch.disabled = true;
+  toast(cards.length + '枚を書き出しています…');
+  Promise.all(cards.map(function(c){ return renderToBlob(c, scale); })).then(function(blobs){
+    return dlPromise.then(function(d){
+      if(!d){
+        /* offline-friendly path: one zip */
+        return loadJSZip().then(function(JSZip){
+          if(!JSZip) return sequential(blobs, cards);
+          var zip = new JSZip(), used = {};
+          blobs.forEach(function(b,i){
+            if(!b) return;
+            var n = cardFilename(cards[i], i);
+            while(used[n]) n = n.replace(/(\.png)$/, '_'+(i+1)+'$1');
+            used[n] = 1;
+            zip.file(n, b);
+          });
+          return zip.generateAsync({type:'blob'}).then(function(z){
+            return saveBlob(z, projSlug() + '.zip');
+          });
+        });
+      }
+      return sequential(blobs, cards);
+    });
+  }).then(function(){ btnBatch.disabled = false; })
+    .catch(function(){ btnBatch.disabled = false; toast('書き出しに失敗しました'); });
+
+  function sequential(blobs, cards){
+    var i = 0;
+    function step(){
+      if(i >= blobs.length){ toast('書き出しが終わりました'); return Promise.resolve(); }
+      var b = blobs[i], c = cards[i], n = i; i++;
+      if(!b) return step();
+      return saveBlob(b, cardFilename(c, n), true).then(function(ok){
+        if(!ok) return;
+        return new Promise(function(r){ setTimeout(r, 350); }).then(step);
+      });
+    }
+    return step();
+  }
+});
+
+/* ── toast ────────────────────────────────────────────── */
+var toastEl = document.getElementById('toast'), toastT = null;
+function toast(msg){
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  clearTimeout(toastT);
+  toastT = setTimeout(function(){ toastEl.classList.remove('show'); }, 2600);
+}
+
+/* ── image input ──────────────────────────────────────── */
+function attachImage(card, dataUrl, cb){
+  if(!dataUrl){ card.imgData=null; card._img=null; if(cb) cb(); return; }
+  var im = new Image();
+  im.onload = function(){ card.imgData = dataUrl; card._img = im; if(cb) cb(); };
+  im.onerror = function(){ card.imgData=null; card._img=null; if(cb) cb(); };
+  im.src = dataUrl;
+}
+function loadImageFile(file){
+  if(!file || !/^image\//.test(file.type)){ toast('画像ファイルを入れてください'); return; }
+  var fr = new FileReader();
+  fr.onload = function(){
+    var card = S;
+    attachImage(card, fr.result, function(){
+      if(!card._img){ toast('画像を読み込めませんでした'); return; }
+      card.img.zoom=1; card.img.ox=0; card.img.oy=0;
+      if(card===S){ zoomEl.value=100; zoomVal.textContent='100%'; }
+      autoReadArtColors(card);
+      draw(); renderDeck(); save();
+      if(card===S) syncSem();
+    });
+  };
+  fr.onerror = function(){ toast('画像を読み込めませんでした'); };
+  fr.readAsDataURL(file);
+}
+var fileInput = document.getElementById('fileInput');
+document.getElementById('btnPick').addEventListener('click', function(){ fileInput.click(); });
+fileInput.addEventListener('change', function(){ if(fileInput.files[0]) loadImageFile(fileInput.files[0]); fileInput.value=''; });
+document.getElementById('btnClearImg').addEventListener('click', function(){
+  S.imgData=null; S._img=null; draw(); renderDeck(); save();
+});
+document.getElementById('btnFit').addEventListener('click', function(){
+  S.img.zoom=1; S.img.ox=0; S.img.oy=0; zoomEl.value=100; zoomVal.textContent='100%'; draw(); save();
+});
+
+var stage = document.getElementById('stage');
+['dragenter','dragover'].forEach(function(ev){
+  stage.addEventListener(ev, function(e){ e.preventDefault(); stage.classList.add('dropzone-live'); });
+});
+['dragleave','dragend'].forEach(function(ev){
+  stage.addEventListener(ev, function(e){ if(e.target===stage) stage.classList.remove('dropzone-live'); });
+});
+stage.addEventListener('drop', function(e){
+  e.preventDefault(); stage.classList.remove('dropzone-live');
+  if(e.dataTransfer && e.dataTransfer.files[0]) loadImageFile(e.dataTransfer.files[0]);
+});
+window.addEventListener('paste', function(e){
+  var items = e.clipboardData && e.clipboardData.items;
+  if(!items) return;
+  for(var i=0;i<items.length;i++){
+    if(items[i].type && items[i].type.indexOf('image')===0){
+      var f = items[i].getAsFile();
+      if(f){ e.preventDefault(); loadImageFile(f); return; }
+    }
+  }
+});
+
+/* Character and Magic come from the artwork unless the user pinned them. */
+function autoReadArtColors(card){
+  if(!card._img || !card._img.complete || !card._img.naturalWidth) return;
+  card.autoArt = card.autoArt || {};
+  var pinned = card.sem || {};
+  if(pinned.character && pinned.magic) return;
+  var pal = extractColors(card._img, 8);
+  if(!pal.length) return;
+  var art = pickArtColors(pal);
+  if(!pinned.character) card.autoArt.character = art.character.hex;
+  if(!pinned.magic)     card.autoArt.magic     = art.magic.hex;
+}
+
+/* ── zoom + drag ──────────────────────────────────────── */
+var zoomEl = document.getElementById('imgZoom'), zoomVal = document.getElementById('imgZoomVal');
+zoomEl.addEventListener('input', function(){
+  S.img.zoom = Number(zoomEl.value)/100;
+  zoomVal.textContent = zoomEl.value + '%';
+  draw(); save();
+});
+canvas.addEventListener('wheel', function(e){
+  if(!S._img) return;
+  e.preventDefault();
+  var z = clamp(S.img.zoom * (e.deltaY>0 ? 0.94 : 1.064), 0.5, 3.2);
+  S.img.zoom = z; zoomEl.value = Math.round(z*100); zoomVal.textContent = Math.round(z*100)+'%';
+  draw(); save();
+}, {passive:false});
+
+var dragging=false, lastX=0, lastY=0;
+canvas.addEventListener('pointerdown', function(e){
+  if(!S._img || !lastArt) return;
+  dragging=true; lastX=e.clientX; lastY=e.clientY;
+  canvas.classList.add('dragging');
+  canvas.setPointerCapture(e.pointerId);
+});
+canvas.addEventListener('pointermove', function(e){
+  if(!dragging || !lastArt) return;
+  var rect = canvas.getBoundingClientRect();
+  var k = W / rect.width;
+  S.img.ox = clamp(S.img.ox + (e.clientX-lastX)*k/lastArt.w, -1.2, 1.2);
+  S.img.oy = clamp(S.img.oy + (e.clientY-lastY)*k/lastArt.h, -1.2, 1.2);
+  lastX=e.clientX; lastY=e.clientY;
+  draw();
+});
+['pointerup','pointercancel'].forEach(function(ev){
+  canvas.addEventListener(ev, function(e){
+    if(dragging) save();
+    dragging=false; canvas.classList.remove('dragging');
+    try{ canvas.releasePointerCapture(e.pointerId); }catch(_){}
+  });
+});
+
+/* ── segmented controls ───────────────────────────────── */
+function seg(id, onPick){
+  var el = document.getElementById(id);
+  el.addEventListener('click', function(e){
+    var b = e.target.closest ? e.target.closest('button[data-v]') : null;
+    if(!b) return;
+    Array.prototype.forEach.call(el.querySelectorAll('button[data-v]'), function(x){
+      x.setAttribute('aria-pressed', String(x===b));
+    });
+    onPick(b.getAttribute('data-v'));
+  });
+}
+function segSet(id, val){
+  var el = document.getElementById(id);
+  Array.prototype.forEach.call(el.querySelectorAll('button[data-v]'), function(b){
+    b.setAttribute('aria-pressed', String(b.getAttribute('data-v') === val));
+  });
+}
+seg('segLayout', function(v){ S.layout=v; draw(); save(); });
+seg('segFont',   function(v){ S.fontSet=v; draw(); save(); });
+seg('segCustomMode', function(v){ S.custom.mode=v; S.custom.on=true; syncSwatches(); syncSem(); draw(); save(); });
+
+/* ── swatches ─────────────────────────────────────────── */
+function avgLum(list){
+  var t = 0;
+  for(var i=0;i<list.length;i++){
+    var c = hexToRgb(list[i]);
+    t += (0.2126*c[0] + 0.7152*c[1] + 0.0722*c[2]) / 255;
+  }
+  return t / list.length;
+}
+var SW_GROUPS = { dark:'swDark', light:'swLight', foil:'swFoil' };
+Object.keys(SW_GROUPS).forEach(function(g){
+  var wrap = document.getElementById(SW_GROUPS[g]);
+  THEMES.filter(function(t){ return t.group===g; }).forEach(function(t){
+    var b = document.createElement('button');
+    b.type='button'; b.className='sw'; b.setAttribute('data-id',t.id); b.title=t.name;
+    var fill = document.createElement('span');
+    fill.className='swfill';
+    fill.style.background = t.foil
+      ? 'linear-gradient(140deg,'+t.foil.join(',')+')'
+      : 'linear-gradient(140deg,'+t.bg[0]+','+t.bg[1]+' 62%,'+t.frame+')';
+    var nm = document.createElement('span');
+    nm.className='swname'; nm.textContent = t.name;
+    var lum = avgLum(t.foil || [t.bg[0], t.bg[1], t.frame]);
+    if(lum > 0.55){ nm.style.color='#26262E'; nm.style.textShadow='0 1px 3px rgba(255,255,255,.75)'; }
+    else { nm.style.color='#FFFFFF'; nm.style.textShadow='0 1px 3px rgba(0,0,0,.6)'; }
+    b.appendChild(fill); b.appendChild(nm);
+    b.addEventListener('click', function(){
+      S.themeId = t.id; S.custom.on = false;
+      syncSwatches(); syncSem(); draw(); save();
+    });
+    wrap.appendChild(b);
+  });
+});
+function syncSwatches(){
+  Array.prototype.forEach.call(document.querySelectorAll('.sw'), function(b){
+    b.setAttribute('aria-pressed', String(!S.custom.on && b.getAttribute('data-id')===S.themeId));
+  });
+}
+var customColor = document.getElementById('customColor');
+customColor.addEventListener('input', function(){
+  S.custom.color = customColor.value; S.custom.on = true;
+  syncSwatches(); syncSem(); draw(); save();
+});
+
+/* ── ground / frame / texture ─────────────────────────── */
+function bindSelect(id, key, after){
+  var el = document.getElementById(id);
+  el.addEventListener('change', function(){ S[key] = el.value; if(after) after(); draw(); save(); });
+}
+bindSelect('fBgStyle','bgStyle');
+bindSelect('fFrameStyle','frameStyle');
+bindSelect('fTexture','texture');
+var texAmt = document.getElementById('fTexAmt'), texAmtVal = document.getElementById('fTexAmtVal');
+texAmt.addEventListener('input', function(){
+  S.texAmt = Number(texAmt.value)||45;
+  texAmtVal.textContent = S.texAmt + '%';
+  draw(); save();
+});
+
+/* ── semantic roles ───────────────────────────────────── */
+function normHex(c){
+  if(typeof c === 'string' && /^#[0-9a-fA-F]{6}$/.test(c)) return c;
+  var r = hexToRgb(c);
+  var to=function(x){ var v=x.toString(16); return v.length<2?'0'+v:v; };
+  return '#'+to(r[0])+to(r[1])+to(r[2]);
+}
+var semRows = {};
+(function buildSemRows(){
+  var wraps = { ui:document.getElementById('semUi'), text:document.getElementById('semText'),
+                art:document.getElementById('semArt') };
+  SEM_ROLES.forEach(function(role){
+    var row = document.createElement('div');
+    row.className = 'semrow' + (role.kind==='art' ? ' art' : '');
+    row.setAttribute('data-k', role.k);
+    var sw = document.createElement('span'); sw.className='semsw';
+    var lab = document.createElement('span'); lab.className='semlab';
+    var b = document.createElement('b'); b.textContent = role.label;
+    var i = document.createElement('i'); i.textContent = role.jp;
+    lab.appendChild(b); lab.appendChild(i);
+    var src = document.createElement('span'); src.className='semsrc';
+    var inp = document.createElement('input');
+    inp.type='color'; inp.setAttribute('aria-label', role.label+'（'+role.jp+'）');
+    inp.addEventListener('input', function(){
+      S.sem[role.k] = inp.value;
+      syncSem(); draw(); save(); scheduleDeck();
+    });
+    var del = document.createElement('button');
+    del.type='button'; del.className='btn btn-danger'; del.textContent='戻す';
+    del.setAttribute('aria-label', role.label+'を配色に戻す');
+    del.addEventListener('click', function(){
+      delete S.sem[role.k];
+      syncSem(); draw(); save(); scheduleDeck();
+    });
+    row.appendChild(sw); row.appendChild(lab); row.appendChild(src);
+    row.appendChild(inp); row.appendChild(del);
+    (wraps[role.kind] || wraps.ui).appendChild(row);
+    semRows[role.k] = { row:row, input:inp, sw:sw, src:src };
+  });
+})();
+var SRC_LABEL = { set:'指定', auto:'画像', preset:'配色' };
+function syncSem(){
+  var m = semOf(S);
+  SEM_ROLES.forEach(function(role){
+    var o = semRows[role.k], v = m[role.k], src = semSource(S, role.k);
+    o.row.classList.toggle('set', src==='set');
+    o.row.classList.toggle('auto', src==='auto');
+    o.src.textContent = v ? SRC_LABEL[src] : '未設定';
+    o.input.value = normHex(v || '#888888');
+    o.sw.style.background = v || 'repeating-linear-gradient(45deg,#8886,#8886 4px,transparent 4px,transparent 8px)';
+  });
+}
+document.getElementById('btnSemReset').addEventListener('click', function(){
+  S.sem = {};
+  syncSem(); draw(); save(); renderDeck();
+  toast('配色に戻しました');
+});
+
+/* ── UI tuning ────────────────────────────────────────── */
+function bindRange(id, valId, apply, fmt){
+  var el = document.getElementById(id), out = document.getElementById(valId);
+  el.addEventListener('input', function(){
+    apply(Number(el.value));
+    out.textContent = fmt ? fmt(el.value) : el.value;
+    draw(); save(); scheduleDeck();
+    if(id === 'fAccentAmt') describeAccent();
+  });
+  return el;
+}
+var pct = function(v){ return v + '%'; };
+bindRange('fUiSat','fUiSatVal',      function(v){ S.uiSat = v; }, pct);
+bindRange('fUiLight','fUiLightVal',  function(v){ S.uiLight = v; }, function(v){ return (v>0?'+':'')+v; });
+bindRange('fUiAlpha','fUiAlphaVal',  function(v){ S.uiAlpha = v; }, pct);
+bindRange('fAccentAmt','fAccentAmtVal', function(v){ S.accentAmount = v; }, pct);
+bindRange('fScrimPos','fScrimPosVal',     function(v){ S.scrim.pos = v; }, pct);
+bindRange('fScrimStr','fScrimStrVal',     function(v){ S.scrim.strength = v; }, pct);
+bindRange('fScrimAlpha','fScrimAlphaVal', function(v){ S.scrim.alpha = v; }, pct);
+bindRange('fScrimSoft','fScrimSoftVal',   function(v){ S.scrim.soft = v; });
+
+function describeAccent(){
+  var on = ACCENT_TARGETS.filter(function(t){ return accentOn(S, t.k); }).map(function(t){ return t.label; });
+  var el = document.getElementById('accentWhere');
+  el.textContent = on.length
+    ? 'いま Accent が出る場所：' + on.join('・')
+    : 'Accent はどこにも出ません（枠の色で代用します）。';
+}
+document.getElementById('btnScrimReset').addEventListener('click', function(){
+  S.scrim = { pos:DEFAULT_SCRIM.pos, strength:DEFAULT_SCRIM.strength,
+              alpha:DEFAULT_SCRIM.alpha, soft:DEFAULT_SCRIM.soft };
+  syncTuning(); draw(); save();
+});
+function syncTuning(){
+  var set = function(id,valId,v,fmt){
+    document.getElementById(id).value = v;
+    document.getElementById(valId).textContent = fmt ? fmt(v) : v;
+  };
+  set('fUiSat','fUiSatVal', S.uiSat==null?100:S.uiSat, pct);
+  set('fUiLight','fUiLightVal', S.uiLight||0, function(v){ return (v>0?'+':'')+v; });
+  set('fUiAlpha','fUiAlphaVal', S.uiAlpha==null?100:S.uiAlpha, pct);
+  set('fAccentAmt','fAccentAmtVal', S.accentAmount==null?55:S.accentAmount, pct);
+  var sc = S.scrim || DEFAULT_SCRIM;
+  set('fScrimPos','fScrimPosVal', sc.pos, pct);
+  set('fScrimStr','fScrimStrVal', sc.strength, pct);
+  set('fScrimAlpha','fScrimAlphaVal', sc.alpha, pct);
+  set('fScrimSoft','fScrimSoftVal', sc.soft);
+  describeAccent();
+}
+
+/* ── before / after ───────────────────────────────────── */
+var compareOn = false;
+var beforeCanvas = document.getElementById('cardBefore');
+var stageWrap = document.getElementById('stageWrap');
+var plateBefore = document.getElementById('plateBefore');
+function untunedCard(card){
+  var c = serializeCard(card, 'none');
+  c.sem = {}; c.autoArt = {};
+  c.uiSat = 100; c.uiLight = 0; c.uiAlpha = 100; c.accentAmount = 55;
+  c.scrim = { pos:DEFAULT_SCRIM.pos, strength:DEFAULT_SCRIM.strength,
+              alpha:DEFAULT_SCRIM.alpha, soft:DEFAULT_SCRIM.soft };
+  c._img = card._img;
+  return c;
+}
+function drawBefore(){
+  if(!compareOn) return;
+  var g = beforeCanvas.getContext('2d');
+  var prev = S; S = untunedCard(prev); trackArt = false;
+  try { drawCard(g); } catch(e){} finally { trackArt = true; S = prev; }
+}
+document.getElementById('btnCompare').addEventListener('click', function(){
+  compareOn = !compareOn;
+  this.setAttribute('aria-pressed', String(compareOn));
+  plateBefore.hidden = !compareOn;
+  stageWrap.classList.toggle('cmp', compareOn);
+  if(compareOn) drawBefore();
+});
+
+/* ── analysis ─────────────────────────────────────────── */
+function renderScaled(card, w, h){
+  var c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  var g = c.getContext('2d', { willReadFrequently:true });
+  g.scale(w/W, h/H);
+  var prev = S; S = card; trackArt = false; lastArtAny = null;
+  try { drawCard(g); } catch(e){} finally { trackArt = true; S = prev; }
+  return { ctx:g, art:lastArtAny };
+}
+function dist2(r,g,b,c){
+  var rm=(r+c[0])/2, dr=r-c[0], dg=g-c[1], db=b-c[2];
+  return (2+rm/256)*dr*dr + 4*dg*dg + (2+(255-rm)/256)*db*db;
+}
+var ROLE_ORDER = ['character','magic','accent','frame','ui','text','base','shadow'];
+var ROLE_JP = { character:'Character', magic:'Magic', accent:'Accent', frame:'Frame',
+                ui:'UI', text:'Text', base:'Base', shadow:'Shadow' };
+function analyzeCard(card){
+  var w = 190, h = 266;
+  var r = renderScaled(card, w, h);
+  var data = r.ctx.getImageData(0,0,w,h).data;
+  var T = theme(card), m = semOf(card);
+  var chrome = [
+    {k:'base',  c:hexToRgb(T.bg[0])}, {k:'base', c:hexToRgb(T.bg[1])},
+    {k:'ui',    c:hexToRgb(T.panel)},
+    {k:'frame', c:hexToRgb(T.frame)}, {k:'frame', c:hexToRgb(T.frameHi)},
+    {k:'accent',c:hexToRgb(T.accent)},
+    {k: accentOn(card,'stats') ? 'accent' : 'ui', c:hexToRgb(T.accent2)},
+    {k:'text',  c:hexToRgb(T.text)},  {k:'text', c:hexToRgb(T.sub)},
+    {k:'shadow',c:hexToRgb(T.shadow)}
+  ];
+  var inArtRefs = chrome.slice();
+  if(m.character) inArtRefs.push({k:'character', c:hexToRgb(m.character)});
+  if(m.magic)     inArtRefs.push({k:'magic',     c:hexToRgb(m.magic)});
+  var a = r.art;
+  var ax0 = a ? a.x/W*w : -1, ay0 = a ? a.y/H*h : -1,
+      ax1 = a ? (a.x+a.w)/W*w : -1, ay1 = a ? (a.y+a.h)/H*h : -1;
+  var counts = {}, total = 0, artPx = 0;
+  for(var y=0;y<h;y++){
+    for(var x=0;x<w;x++){
+      var i=(y*w+x)*4;
+      if(data[i+3] < 24) continue;
+      var inArt = (x>=ax0 && x<ax1 && y>=ay0 && y<ay1);
+      if(inArt) artPx++;
+      var list = inArt ? inArtRefs : chrome;
+      var best = null, bd = Infinity;
+      for(var j=0;j<list.length;j++){
+        var d = dist2(data[i],data[i+1],data[i+2], list[j].c);
+        if(d < bd){ bd = d; best = list[j].k; }
+      }
+      counts[best] = (counts[best]||0)+1; total++;
+    }
+  }
+  var shares = {};
+  ROLE_ORDER.forEach(function(k){ shares[k] = total ? (counts[k]||0)/total*100 : 0; });
+  return { shares:shares, total:total, artRegion: total ? artPx/total*100 : 0, T:T, m:m };
+}
+function roleColor(res, k){
+  var T = res.T, m = res.m;
+  return { character:m.character||'#888', magic:m.magic||'#888', accent:T.accent,
+           frame:T.frame, ui:T.panel, text:T.text, base:T.bg[0], shadow:T.shadow }[k];
+}
+function warnRow(level, tag, text){
+  var d = document.createElement('div'); d.className = 'warn ' + level;
+  var i = document.createElement('span'); i.className='wi'; i.textContent = tag;
+  var t = document.createElement('span'); t.textContent = text;
+  d.appendChild(i); d.appendChild(t);
+  return d;
+}
+function runAnalysis(){
+  var res = analyzeCard(S);
+  var T = res.T, m = res.m, sh = res.shares;
+  document.getElementById('analysisOut').hidden = false;
+
+  var bar = document.getElementById('useBar'); bar.textContent = '';
+  var leg = document.getElementById('useLegend'); leg.textContent = '';
+  ROLE_ORDER.forEach(function(k){
+    if(sh[k] < 0.25) return;
+    var seg = document.createElement('span');
+    seg.style.width = sh[k] + '%';
+    seg.style.background = roleColor(res,k);
+    seg.title = ROLE_JP[k] + ' ' + sh[k].toFixed(1) + '%';
+    bar.appendChild(seg);
+    var row = document.createElement('div'); row.className='legrow';
+    var dot = document.createElement('span'); dot.className='dot';
+    dot.style.background = roleColor(res,k);
+    var nm = document.createElement('span'); nm.className='nm'; nm.textContent = ROLE_JP[k];
+    var pv = document.createElement('span'); pv.className='pct'; pv.textContent = sh[k].toFixed(1)+'%';
+    row.appendChild(dot); row.appendChild(nm); row.appendChild(pv);
+    leg.appendChild(row);
+  });
+
+  var groups = [
+    { nm:'Character', v:sh.character, c:m.character||'#888' },
+    { nm:'Magic',     v:sh.magic,     c:m.magic||'#888' },
+    { nm:'UI',        v:sh.ui + sh.frame + sh.accent, c:T.panel },
+    { nm:'Background',v:sh.base + sh.shadow, c:T.bg[0] },
+    { nm:'Text',      v:sh.text, c:T.text }
+  ];
+  var cls = document.getElementById('useClass'); cls.textContent = '';
+  groups.forEach(function(g){
+    var row = document.createElement('div'); row.className='legrow';
+    var dot = document.createElement('span'); dot.className='dot'; dot.style.background = g.c;
+    var nm = document.createElement('span'); nm.className='nm'; nm.textContent = g.nm;
+    var pv = document.createElement('span'); pv.className='pct'; pv.textContent = g.v.toFixed(1)+'%';
+    row.appendChild(dot); row.appendChild(nm); row.appendChild(pv);
+    cls.appendChild(row);
+  });
+
+  var wl = document.getElementById('warnList'); wl.textContent = '';
+  var issues = 0;
+
+  if(sh.accent >= 18){
+    issues++;
+    wl.appendChild(warnRow('bad','ACCENT',
+      'アクセントが画面の ' + sh.accent.toFixed(1) + '% を占めています。Accent使用量を下げるか、Accentの彩度を落としてください。'));
+  } else if(sh.accent >= 11){
+    issues++;
+    wl.appendChild(warnRow('caution','ACCENT',
+      'アクセントがやや多めです（' + sh.accent.toFixed(1) + '%）。5〜10%程度に収めると主役が引き立ちます。'));
+  }
+
+  var pairs = [
+    { a:m.textMain, b:T.bg[0],  need:4.5, nm:'見出し文字 と 地' },
+    { a:m.textMain, b:T.panel,  need:4.5, nm:'見出し文字 と パネル' },
+    { a:m.textSub,  b:T.panel,  need:4.5, nm:'本文文字 と パネル' },
+    { a:m.textSub,  b:T.bg[0],  need:4.5, nm:'本文文字 と 地' },
+    { a:m.accent,   b:T.panel,  need:3.0, nm:'アクセント と パネル' }
+  ];
+  pairs.forEach(function(pr){
+    if(!pr.a || !pr.b) return;
+    var c = contrast(pr.a, pr.b);
+    if(c < pr.need){
+      issues++;
+      wl.appendChild(warnRow(c < pr.need*0.67 ? 'bad' : 'caution', 'CONTRAST',
+        pr.nm + ' のコントラストが ' + c.toFixed(1) + ':1 です（目安 ' + pr.need.toFixed(1) + ':1）。'));
+    }
+  });
+
+  var artShare = sh.character + sh.magic;
+  if(S._img && res.artRegion > 8 && (artShare / res.artRegion) < 0.18){
+    issues++;
+    wl.appendChild(warnRow('caution','BALANCE',
+      'イラスト枠の中でキャラと魔法の色が ' +
+      Math.round(artShare / res.artRegion * 100) + '% しか残っていません。' +
+      '下部グラデーションを弱めるか、UIの面積を減らすと主役が立ちます。'));
+  }
+  if(!issues) wl.appendChild(warnRow('ok','OK','目立った問題は見つかりませんでした。'));
+}
+document.getElementById('btnAnalyze').addEventListener('click', runAnalysis);
+
+/* ── pull a palette out of the artwork ────────────────── */
+function extractColors(img, want){
+  var w = 84, h = Math.max(1, Math.round(84 * img.naturalHeight / Math.max(1,img.naturalWidth)));
+  var c = document.createElement('canvas'); c.width=w; c.height=h;
+  var g = c.getContext('2d', { willReadFrequently:true });
+  g.drawImage(img, 0, 0, w, h);
+  var d;
+  try { d = g.getImageData(0,0,w,h).data; } catch(e){ return []; }
+  var bins = {};
+  for(var i=0;i<d.length;i+=4){
+    if(d[i+3] < 140) continue;
+    var key = (d[i]>>4)*256 + (d[i+1]>>4)*16 + (d[i+2]>>4);
+    var b = bins[key] || (bins[key] = {r:0,g:0,b:0,n:0});
+    b.r+=d[i]; b.g+=d[i+1]; b.b+=d[i+2]; b.n++;
+  }
+  var list = [];
+  Object.keys(bins).forEach(function(k){
+    var b = bins[k];
+    list.push({ rgb:[b.r/b.n, b.g/b.n, b.b/b.n], n:b.n });
+  });
+  list.sort(function(a,b){ return b.n - a.n; });
+  var out = [], total = 0;
+  list.forEach(function(e){ total += e.n; });
+  for(var j=0;j<list.length && out.length<want;j++){
+    var e = list[j], dup = false;
+    for(var k2=0;k2<out.length;k2++)
+      if(dist2(e.rgb[0],e.rgb[1],e.rgb[2], out[k2].rgb) < 2600){ dup = true; break; }
+    if(dup) continue;
+    var to = function(v){ v = Math.round(v).toString(16); return v.length<2?'0'+v:v; };
+    var hex = '#'+to(e.rgb[0])+to(e.rgb[1])+to(e.rgb[2]);
+    var hsl = hexToHsl(hex);
+    out.push({ rgb:e.rgb, hex:hex, share:e.n/total*100, h:hsl[0], s:hsl[1], l:hsl[2] });
+  }
+  return out;
+}
+function hueGap(a,b){ var d = Math.abs(a-b) % 360; return d > 180 ? 360-d : d; }
+function pickArtColors(pal){
+  var vivid = pal.filter(function(c){ return c.s > 18 && c.l > 20 && c.l < 86; });
+  if(!vivid.length) vivid = pal.slice(0, 3);
+  var character = vivid[0];
+  var magic = null, bestGap = -1;
+  for(var i=1;i<vivid.length;i++){
+    var g = hueGap(vivid[i].h, character.h) + vivid[i].s * 0.25;
+    if(vivid[i].s > 24 && g > bestGap){ bestGap = g; magic = vivid[i]; }
+  }
+  if(!magic) magic = { h:(character.h + 210) % 360, s:Math.max(58, character.s), l:58,
+                       hex:hslToHex((character.h+210)%360, Math.max(58,character.s), 58) };
+  return { character:character, magic:magic };
+}
+function candidatesFrom(art){
+  var ch = art.character, mg = art.magic;
+  return [
+    { name:'暗色UI', note:'魔法の色をUIに薄く残す',
+      sem:{ base:hslToHex(mg.h,22,8), ui:hslToHex(mg.h,20,15), frame:hslToHex(mg.h,24,46),
+            accent:mg.hex, textMain:hslToHex(mg.h,14,95), textSub:hslToHex(mg.h,12,74),
+            shadow:hslToHex(mg.h,32,3) },
+      uiSat:60, uiLight:-4, uiAlpha:92, accentAmount:28 },
+    { name:'明色UI', note:'キャラの色を淡く敷く',
+      sem:{ base:hslToHex(ch.h,28,95), ui:hslToHex(ch.h,24,98), frame:hslToHex(ch.h,38,56),
+            accent:mg.hex, textMain:hslToHex(ch.h,30,14), textSub:hslToHex(ch.h,18,40),
+            shadow:hslToHex(ch.h,20,60) },
+      uiSat:75, uiLight:0, uiAlpha:96, accentAmount:34 },
+    { name:'魔法色UI', note:'UIまで魔法の色で染める',
+      sem:{ base:hslToHex(mg.h,44,12), ui:hslToHex(mg.h,40,21), frame:hslToHex(mg.h,56,52),
+            accent:ch.hex, textMain:hslToHex(mg.h,16,96), textSub:hslToHex(mg.h,20,76),
+            shadow:hslToHex(mg.h,50,4) },
+      uiSat:100, uiLight:0, uiAlpha:100, accentAmount:52 }
+  ];
+}
+function applyTheme(t, opts){
+  opts = opts || {};
+  S.sem = {};
+  Object.keys(t.sem||{}).forEach(function(k){ if(t.sem[k]) S.sem[k] = t.sem[k]; });
+  if(t.uiSat != null) S.uiSat = t.uiSat;
+  if(t.uiLight != null) S.uiLight = t.uiLight;
+  if(t.uiAlpha != null) S.uiAlpha = t.uiAlpha;
+  if(t.accentAmount != null) S.accentAmount = t.accentAmount;
+  if(t.scrim) S.scrim = { pos:t.scrim.pos, strength:t.scrim.strength, alpha:t.scrim.alpha, soft:t.scrim.soft };
+  if(opts.surfaces !== false){
+    if(t.themeId){ S.themeId = t.themeId; S.custom.on = false; }
+    if(t.bgStyle) S.bgStyle = t.bgStyle;
+    if(t.frameStyle) S.frameStyle = t.frameStyle;
+    if(t.texture) S.texture = t.texture;
+    if(t.texAmt != null) S.texAmt = t.texAmt;
+  }
+  syncUI(); draw(); renderDeck(); save();
+}
+var extractOut = document.getElementById('extractOut');
+document.getElementById('btnExtract').addEventListener('click', function(){
+  if(!S._img || !S._img.complete || !S._img.naturalWidth){ toast('先に画像を読み込んでください'); return; }
+  var pal = extractColors(S._img, 8);
+  if(!pal.length){ toast('色を読み取れませんでした'); return; }
+  var chips = document.getElementById('extractChips'); chips.textContent = '';
+  pal.forEach(function(c){
+    var i = document.createElement('i');
+    i.style.background = c.hex;
+    i.title = c.hex + '  ' + c.share.toFixed(1) + '%';
+    chips.appendChild(i);
+  });
+  var art = pickArtColors(pal);
+  S.autoArt = { character:art.character.hex, magic:art.magic.hex };
+  var cl = document.getElementById('candList'); cl.textContent = '';
+  candidatesFrom(art).forEach(function(t){
+    cl.appendChild(presetRow(t, null));
+  });
+  extractOut.hidden = false;
+  syncSem(); draw(); save();
+  toast('主要色から3案つくりました');
+});
+
+/* ── theme presets ────────────────────────────────────── */
+var UP_KEY = 'efuda-kobo/themes/v1';
+function userPresets(){
+  try { return JSON.parse(localStorage.getItem(UP_KEY) || '[]') || []; } catch(e){ return []; }
+}
+function writeUserPresets(list){
+  try { localStorage.setItem(UP_KEY, JSON.stringify(list)); } catch(e){}
+}
+function presetRow(t, onDelete){
+  var row = document.createElement('div'); row.className='presetitem';
+  var pv = document.createElement('span'); pv.className='pv';
+  ['base','ui','frame','accent','character','magic'].forEach(function(k){
+    if(!t.sem || !t.sem[k]) return;
+    var i = document.createElement('i'); i.style.background = t.sem[k]; i.title = k;
+    pv.appendChild(i);
+  });
+  var pn = document.createElement('span'); pn.className='pn';
+  var b = document.createElement('b'); b.textContent = t.name;
+  var note = document.createElement('i'); note.textContent = t.note || '';
+  pn.appendChild(b); pn.appendChild(note);
+  var pa = document.createElement('span'); pa.className='pa';
+  var use = document.createElement('button');
+  use.type='button'; use.className='btn btn-sm'; use.textContent='適用';
+  use.addEventListener('click', function(){ applyTheme(t); toast(t.name + ' を適用しました'); });
+  pa.appendChild(use);
+  if(onDelete){
+    var del = document.createElement('button');
+    del.type='button'; del.className='btn btn-danger'; del.textContent='削除';
+    del.setAttribute('aria-label', t.name + ' を削除');
+    del.addEventListener('click', onDelete);
+    pa.appendChild(del);
+  }
+  row.appendChild(pv); row.appendChild(pn); row.appendChild(pa);
+  return row;
+}
+function renderPresets(){
+  var wrap = document.getElementById('presetList');
+  wrap.textContent = '';
+  SEM_PRESETS.forEach(function(t){ wrap.appendChild(presetRow(t, null)); });
+  var list = userPresets();
+  list.forEach(function(t, i){
+    wrap.appendChild(presetRow(t, function(){
+      var cur = userPresets(); cur.splice(i,1); writeUserPresets(cur);
+      renderPresets(); toast('テーマを削除しました');
+    }));
+  });
+}
+document.getElementById('btnPresetSave').addEventListener('click', function(){
+  var el = document.getElementById('fPresetName');
+  var nm = (el.value||'').trim();
+  if(!nm){ toast('テーマの名前を入れてください'); el.focus(); return; }
+  var m = semOf(S), sem = {};
+  SEM_ROLES.forEach(function(r){ if(m[r.k]) sem[r.k] = m[r.k]; });
+  var list = userPresets();
+  list.unshift({
+    name:nm, note:'保存したテーマ', sem:sem,
+    themeId:S.themeId, bgStyle:S.bgStyle, frameStyle:S.frameStyle, texture:S.texture, texAmt:S.texAmt,
+    uiSat:S.uiSat, uiLight:S.uiLight, uiAlpha:S.uiAlpha, accentAmount:S.accentAmount,
+    scrim:{ pos:S.scrim.pos, strength:S.scrim.strength, alpha:S.scrim.alpha, soft:S.scrim.soft }
+  });
+  writeUserPresets(list.slice(0, 30));
+  el.value = '';
+  renderPresets();
+  toast('テーマを保存しました');
+});
+
+/* ── text fields ──────────────────────────────────────── */
+var TEXT_FIELDS = { fName:'name', fSubtitle:'subtitle', fDesc:'desc', fRarity:'rarity',
+                    fNumber:'number', fAuthor:'author', fFilename:'filename' };
+Object.keys(TEXT_FIELDS).forEach(function(id){
+  var key = TEXT_FIELDS[id], el = document.getElementById(id);
+  el.addEventListener('input', function(){
+    S[key] = el.value;
+    draw(); save();
+    if(key==='name' || key==='filename') refreshNameHints();
+    if(key==='name') scheduleDeck();
+  });
+});
+Array.prototype.forEach.call(document.querySelectorAll('input[data-toggle]'), function(cb){
+  var key = cb.getAttribute('data-toggle');
+  cb.addEventListener('change', function(){
+    S.show[key] = cb.checked;
+    cb.closest('.group').classList.toggle('off', !cb.checked);
+    draw(); save();
+  });
+});
+
+/* ── stats ────────────────────────────────────────────── */
+var statList = document.getElementById('statList');
+function renderStats(){
+  statList.textContent = '';
+  S.stats.forEach(function(st,i){
+    var row = document.createElement('div'); row.className='statrow';
+    var k = document.createElement('input');
+    k.type='text'; k.value=st.k; k.maxLength=10; k.placeholder='項目名';
+    k.setAttribute('aria-label','項目名 '+(i+1));
+    k.addEventListener('input', function(){ S.stats[i].k=k.value; draw(); save(); });
+    var v = document.createElement('input');
+    v.type='number'; v.value=st.v; v.min='0'; v.max='99999';
+    v.setAttribute('aria-label','数値 '+(i+1));
+    v.addEventListener('input', function(){ S.stats[i].v = v.value===''?'':Number(v.value); draw(); save(); });
+    var del = document.createElement('button');
+    del.type='button'; del.className='btn btn-danger'; del.textContent='削除';
+    del.setAttribute('aria-label','項目 '+(i+1)+' を削除');
+    del.addEventListener('click', function(){ S.stats.splice(i,1); renderStats(); draw(); save(); });
+    row.appendChild(k); row.appendChild(v); row.appendChild(del);
+    statList.appendChild(row);
+  });
+  document.getElementById('btnAddStat').disabled = S.stats.length >= 7;
+}
+document.getElementById('btnAddStat').addEventListener('click', function(){
+  if(S.stats.length >= 7) return;
+  S.stats.push({k:'',v:50}); renderStats(); draw(); save();
+});
+var statMaxEl = document.getElementById('fStatMax');
+statMaxEl.addEventListener('input', function(){ S.statMax = Number(statMaxEl.value)||100; draw(); save(); });
+
+/* ── skills ───────────────────────────────────────────── */
+var skillList = document.getElementById('skillList');
+function renderSkills(){
+  skillList.textContent = '';
+  S.skills.forEach(function(sk,i){
+    var card = document.createElement('div'); card.className='skillcard';
+    var head = document.createElement('div'); head.className='skillcard-head';
+    var lb = document.createElement('span'); lb.className='lbl'; lb.textContent='技 '+(i+1);
+    var del = document.createElement('button');
+    del.type='button'; del.className='btn btn-danger'; del.textContent='削除';
+    del.setAttribute('aria-label','技 '+(i+1)+' を削除');
+    del.addEventListener('click', function(){ S.skills.splice(i,1); renderSkills(); draw(); save(); });
+    head.appendChild(lb); head.appendChild(del);
+    var n = document.createElement('input');
+    n.type='text'; n.value=sk.n; n.maxLength=24; n.placeholder='技の名前';
+    n.setAttribute('aria-label','技 '+(i+1)+' の名前');
+    n.addEventListener('input', function(){ S.skills[i].n=n.value; draw(); save(); });
+    var t = document.createElement('textarea');
+    t.value=sk.t; t.maxLength=160; t.placeholder='効果の説明';
+    t.setAttribute('aria-label','技 '+(i+1)+' の効果');
+    t.addEventListener('input', function(){ S.skills[i].t=t.value; draw(); save(); });
+    card.appendChild(head); card.appendChild(n); card.appendChild(t);
+    skillList.appendChild(card);
+  });
+  document.getElementById('btnAddSkill').disabled = S.skills.length >= 4;
+}
+document.getElementById('btnAddSkill').addEventListener('click', function(){
+  if(S.skills.length >= 4) return;
+  S.skills.push({n:'',t:''}); renderSkills(); draw(); save();
+});
+
+/* ── the deck ─────────────────────────────────────────── */
+var deckRail = document.getElementById('deckRail');
+var deckT = null;
+function scheduleDeck(){ clearTimeout(deckT); deckT = setTimeout(renderDeck, 260); }
+function renderDeck(){
+  clearTimeout(deckT);
+  deckRail.textContent = '';
+  P.cards.forEach(function(card,i){
+    var b = document.createElement('button');
+    b.type='button'; b.className='deck-card';
+    b.setAttribute('aria-current', String(i===P.active));
+    b.setAttribute('aria-label', (card.name||('カード'+(i+1))) + ' を編集');
+    var cv = document.createElement('canvas');
+    cv.width = 125; cv.height = 175;
+    var g = cv.getContext('2d');
+    g.scale(125/W, 175/H);
+    var prev = S; S = card; trackArt = false;
+    try { drawCard(g); } catch(err){} finally { trackArt = true; S = prev; }
+    var nm = document.createElement('span');
+    nm.className='dcn';
+    nm.textContent = (card.name||'').trim() || ('#'+(i+1));
+    b.appendChild(cv); b.appendChild(nm);
+    b.addEventListener('click', function(){ selectCard(i); });
+    deckRail.appendChild(b);
+  });
+  document.getElementById('btnCardDel').disabled = P.cards.length <= 1;
+  document.getElementById('btnCardLeft').disabled = P.active === 0;
+  document.getElementById('btnCardRight').disabled = P.active === P.cards.length-1;
+}
+function selectCard(i){
+  P.active = clamp(i, 0, P.cards.length-1);
+  S = P.cards[P.active];
+  syncUI(); draw(); renderDeck(); save();
+}
+document.getElementById('btnCardAdd').addEventListener('click', function(){
+  var c = newCard(false);
+  c.themeId = S.themeId; c.layout = S.layout; c.fontSet = S.fontSet;
+  c.bgStyle = S.bgStyle; c.frameStyle = S.frameStyle; c.texture = S.texture; c.texAmt = S.texAmt;
+  c.custom = { on:S.custom.on, color:S.custom.color, mode:S.custom.mode };
+  c.sem = JSON.parse(JSON.stringify(S.sem||{}));
+  c.uiSat = S.uiSat; c.uiLight = S.uiLight; c.uiAlpha = S.uiAlpha;
+  c.accentAmount = S.accentAmount;
+  c.scrim = JSON.parse(JSON.stringify(S.scrim||DEFAULT_SCRIM));
+  c.statMax = S.statMax;
+  c.stats = S.stats.map(function(s){ return {k:s.k, v:s.v}; });
+  P.cards.splice(P.active+1, 0, c);
+  selectCard(P.active+1);
+});
+document.getElementById('btnCardDup').addEventListener('click', function(){
+  var c = JSON.parse(JSON.stringify(serializeCard(S, 'raw')));
+  c._img = null;
+  P.cards.splice(P.active+1, 0, c);
+  var idx = P.active+1;
+  attachImage(c, c.imgData, function(){ selectCard(idx); });
+});
+document.getElementById('btnCardDel').addEventListener('click', function(){
+  if(P.cards.length <= 1) return;
+  P.cards.splice(P.active,1);
+  selectCard(Math.min(P.active, P.cards.length-1));
+  toast('カードを削除しました');
+});
+function moveCard(dir){
+  var j = P.active + dir;
+  if(j < 0 || j >= P.cards.length) return;
+  var tmp = P.cards[P.active]; P.cards[P.active] = P.cards[j]; P.cards[j] = tmp;
+  P.active = j; S = P.cards[j];
+  renderDeck(); save();
+}
+document.getElementById('btnCardLeft').addEventListener('click', function(){ moveCard(-1); });
+document.getElementById('btnCardRight').addEventListener('click', function(){ moveCard(1); });
+
+var projNameEl = document.getElementById('fProject');
+projNameEl.addEventListener('input', function(){ P.name = projNameEl.value; refreshNameHints(); save(); });
+
+/* ── UI sync ──────────────────────────────────────────── */
+function syncUI(){
+  Object.keys(TEXT_FIELDS).forEach(function(id){
+    var v = S[TEXT_FIELDS[id]];
+    document.getElementById(id).value = v == null ? '' : v;
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('input[data-toggle]'), function(cb){
+    var key = cb.getAttribute('data-toggle');
+    cb.checked = !!S.show[key];
+    cb.closest('.group').classList.toggle('off', !cb.checked);
+  });
+  segSet('segLayout', S.layout);
+  segSet('segFont', S.fontSet);
+  segSet('segCustomMode', S.custom.mode);
+  customColor.value = normHex(S.custom.color);
+  document.getElementById('fBgStyle').value = S.bgStyle || 'diag';
+  document.getElementById('fFrameStyle').value = S.frameStyle || 'standard';
+  document.getElementById('fTexture').value = S.texture || 'none';
+  texAmt.value = S.texAmt == null ? 45 : S.texAmt;
+  texAmtVal.textContent = texAmt.value + '%';
+  statMaxEl.value = S.statMax;
+  zoomEl.value = Math.round((S.img.zoom||1)*100);
+  zoomVal.textContent = zoomEl.value + '%';
+  projNameEl.value = P.name || '';
+  syncSwatches(); syncSem(); syncTuning(); renderStats(); renderSkills(); refreshNameHints();
+}
+
+/* ── serialization ────────────────────────────────────── */
+function serializeCard(card, imgMode){
+  var o = {};
+  Object.keys(card).forEach(function(k){
+    if(k === '_img') return;
+    if(k === 'imgData'){ o.imgData = (imgMode==='none') ? null : card.imgData; return; }
+    o[k] = card[k];
+  });
+  return JSON.parse(JSON.stringify(o));
+}
+function shrinkImage(card){
+  return new Promise(function(res){
+    var im = card._img;
+    if(!im || !im.complete || !im.naturalWidth) return res(card.imgData || null);
+    var mx = 1600, sc = Math.min(1, mx/Math.max(im.naturalWidth, im.naturalHeight));
+    var c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(im.naturalWidth*sc));
+    c.height = Math.max(1, Math.round(im.naturalHeight*sc));
+    var g = c.getContext('2d');
+    g.drawImage(im,0,0,c.width,c.height);
+    var url = '';
+    try { url = c.toDataURL('image/webp', 0.92); } catch(e){}
+    if(url.indexOf('data:image/webp') !== 0){
+      var g2 = c.getContext('2d');
+      g2.globalCompositeOperation = 'destination-over';
+      g2.fillStyle = theme(card).panel;
+      g2.fillRect(0,0,c.width,c.height);
+      g2.globalCompositeOperation = 'source-over';
+      url = c.toDataURL('image/jpeg', 0.9);
+    }
+    res(url.length < (card.imgData||'').length ? url : card.imgData);
+  });
+}
+document.getElementById('btnProjSave').addEventListener('click', function(){
+  var mode = document.getElementById('fImgMode').value;
+  var jobs = P.cards.map(function(c){
+    if(mode === 'none') return Promise.resolve(null);
+    if(mode === 'raw')  return Promise.resolve(c.imgData || null);
+    return shrinkImage(c);
+  });
+  Promise.all(jobs).then(function(imgs){
+    var out = {
+      app:'efuda-kobo', version:1,
+      name: P.name || '', active: P.active,
+      cards: P.cards.map(function(c,i){
+        var o = serializeCard(c, mode);
+        o.imgData = imgs[i];
+        return o;
+      })
+    };
+    var text = JSON.stringify(out);
+    var blob = new Blob([text], {type:'application/json'});
+    if(blob.size > 15.5*1024*1024 && dlCap){
+      toast('ファイルが大きすぎます。画像設定を「圧縮」か「含めない」にしてください');
+      return;
+    }
+    saveBlob(blob, projFilename());
+  });
+});
+var projInput = document.getElementById('projInput');
+document.getElementById('btnProjOpen').addEventListener('click', function(){ projInput.click(); });
+projInput.addEventListener('change', function(){
+  var f = projInput.files[0];
+  projInput.value = '';
+  if(!f) return;
+  var fr = new FileReader();
+  fr.onload = function(){
+    var d;
+    try { d = JSON.parse(fr.result); } catch(e){ toast('ファイルを読めませんでした'); return; }
+    if(!d || !Array.isArray(d.cards) || !d.cards.length){ toast('プロジェクトの形式ではありません'); return; }
+    P.name = String(d.name||'');
+    P.cards = d.cards.map(function(raw){ return migrate(raw); });
+    P.active = clamp(Number(d.active)||0, 0, P.cards.length-1);
+    S = P.cards[P.active];
+    var waiting = 0, done = function(){ if(--waiting <= 0){ syncUI(); draw(); renderDeck(); save(); } };
+    P.cards.forEach(function(c){ if(c.imgData){ waiting++; } });
+    if(!waiting){ syncUI(); draw(); renderDeck(); save(); }
+    else P.cards.forEach(function(c){ if(c.imgData) attachImage(c, c.imgData, done); });
+    toast(P.cards.length + '枚を読み込みました');
+  };
+  fr.onerror = function(){ toast('ファイルを読めませんでした'); };
+  fr.readAsText(f);
+});
+
+/* fill in anything an older or partial file is missing */
+function migrate(raw){
+  var c = newCard(false);
+  if(!raw || typeof raw !== 'object') return c;
+  ['layout','fontSet','themeId','bgStyle','frameStyle','texture','texAmt',
+   'name','subtitle','desc','rarity','number','author','statMax','filename','imgData',
+   'uiSat','uiLight','uiAlpha','accentAmount']
+    .forEach(function(k){ if(raw[k] !== undefined && raw[k] !== null) c[k] = raw[k]; });
+  if(raw.custom) c.custom = { on:!!raw.custom.on, color:raw.custom.color||'#7A5CE0', mode:raw.custom.mode||'dark' };
+  if(raw.scrim) c.scrim = {
+    pos:      raw.scrim.pos      == null ? DEFAULT_SCRIM.pos      : raw.scrim.pos,
+    strength: raw.scrim.strength == null ? DEFAULT_SCRIM.strength : raw.scrim.strength,
+    alpha:    raw.scrim.alpha    == null ? DEFAULT_SCRIM.alpha    : raw.scrim.alpha,
+    soft:     raw.scrim.soft     == null ? DEFAULT_SCRIM.soft     : raw.scrim.soft };
+  if(raw.sem && typeof raw.sem === 'object'){
+    c.sem = {};
+    SEM_ROLES.forEach(function(r){ if(raw.sem[r.k]) c.sem[r.k] = raw.sem[r.k]; });
+  }
+  if(raw.autoArt && typeof raw.autoArt === 'object'){
+    c.autoArt = {};
+    ART_ROLES.forEach(function(k){ if(raw.autoArt[k]) c.autoArt[k] = raw.autoArt[k]; });
+  }
+  /* files written before the roles existed carried per-widget overrides */
+  if(raw.ov && typeof raw.ov === 'object'){
+    var OLD_MAP = { bg1:'base', panel:'ui', frame:'frame', accent:'accent',
+                    text:'textMain', sub:'textSub' };
+    Object.keys(OLD_MAP).forEach(function(k){
+      if(raw.ov[k] && !c.sem[OLD_MAP[k]]) c.sem[OLD_MAP[k]] = raw.ov[k];
+    });
+  }
+  if(raw.show) Object.keys(c.show).forEach(function(k){ if(raw.show[k] !== undefined) c.show[k] = !!raw.show[k]; });
+  if(Array.isArray(raw.stats)) c.stats = raw.stats.slice(0,7).map(function(x){ return {k:String(x.k||''), v:x.v}; });
+  if(Array.isArray(raw.skills)) c.skills = raw.skills.slice(0,4).map(function(x){ return {n:String(x.n||''), t:String(x.t||'')}; });
+  if(raw.img) c.img = { zoom:Number(raw.img.zoom)||1, ox:Number(raw.img.ox)||0, oy:Number(raw.img.oy)||0 };
+  c._img = null;
+  return c;
+}
+
+/* ── autosave (text and colours only) ─────────────────── */
+var KEY = 'efuda-kobo/v2';
+var autosaveEl = document.getElementById('optAutosave');
+var autosave = true;
+try{ if(localStorage.getItem(KEY+':off') === '1') autosave = false; }catch(e){}
+autosaveEl.checked = autosave;
+autosaveEl.addEventListener('change', function(){
+  autosave = autosaveEl.checked;
+  try{
+    localStorage.setItem(KEY+':off', autosave?'0':'1');
+    if(!autosave) localStorage.removeItem(KEY);
+  }catch(e){}
+  if(autosave) save();
+});
+var saveT = null;
+function save(){
+  if(!autosave) return;
+  clearTimeout(saveT);
+  saveT = setTimeout(function(){
+    try{
+      localStorage.setItem(KEY, JSON.stringify({
+        name: P.name, active: P.active,
+        cards: P.cards.map(function(c){ return serializeCard(c, 'none'); })
+      }));
+    }catch(e){}
+  }, 450);
+}
+function restore(){
+  if(!autosave) return;
+  var raw = null;
+  try{ raw = localStorage.getItem(KEY); }catch(e){}
+  if(!raw) return;
+  try{
+    var d = JSON.parse(raw);
+    if(!d || !Array.isArray(d.cards) || !d.cards.length) return;
+    P.name = String(d.name||'');
+    P.cards = d.cards.map(migrate);
+    P.active = clamp(Number(d.active)||0, 0, P.cards.length-1);
+    S = P.cards[P.active];
+  }catch(e){}
+}
+document.getElementById('btnReset').addEventListener('click', function(){
+  var keep = { themeId:S.themeId, layout:S.layout, fontSet:S.fontSet, bgStyle:S.bgStyle,
+               frameStyle:S.frameStyle, texture:S.texture, texAmt:S.texAmt,
+               custom:S.custom, sem:S.sem, autoArt:S.autoArt, statMax:S.statMax,
+               uiSat:S.uiSat, uiLight:S.uiLight, uiAlpha:S.uiAlpha,
+               accentAmount:S.accentAmount, scrim:S.scrim };
+  var c = newCard(false);
+  Object.keys(keep).forEach(function(k){ c[k] = keep[k]; });
+  c.stats = S.stats.map(function(s){ return {k:s.k, v:50}; });
+  P.cards[P.active] = c; S = c;
+  syncUI(); draw(); renderDeck(); save();
+  toast('このカードをまっさらにしました');
+});
+
+/* ── boot ─────────────────────────────────────────────── */
+restore();
+renderPresets();
+syncUI();
+draw();
+P.cards.forEach(function(c){
+  if(c.imgData && !c._img) attachImage(c, c.imgData, function(){
+    autoReadArtColors(c);
+    if(c === S) syncSem();
+    draw(); renderDeck();
+  });
+});
+renderDeck();
+
+})();
+</script>
+
+</body></html>
